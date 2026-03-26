@@ -104,7 +104,7 @@ general:
   world_size: ???
 
   # local_rank, 
-  # with_ddp,
+  with_ddp: True
   # data_path_*, 
   # model_path, 
   # run_path, 
@@ -125,7 +125,7 @@ train_logging:
 # parameters for data loading
 data_loading :
 
-  num_workers: 12
+  num_workers: 6
   rng_seed: ???
   repeat_data_in_mini_epoch : False
 
@@ -137,7 +137,7 @@ training_config:
   training_mode: ["masking"]
 
   num_mini_epochs: 64
-  samples_per_mini_epoch: 2048
+  samples_per_mini_epoch: 4096
   shuffle: True
 
   start_date: 1979-01-01T00:00
@@ -148,11 +148,11 @@ training_config:
   
   learning_rate_scheduling :
     lr_start: 1e-6
-    lr_max: 5e-5
-    lr_final_decay: 2e-6
+    lr_max: 1e-6
+    lr_final_decay: 1e-6
     lr_final: 0.0
-    num_steps_warmup: 256
-    num_steps_cooldown: 512
+    num_steps_warmup: 0
+    num_steps_cooldown: 0 
     policy_warmup: "cosine"
     policy_decay: "constant"
     policy_cooldown: "linear"

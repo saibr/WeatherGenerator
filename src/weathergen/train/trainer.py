@@ -774,22 +774,23 @@ class Trainer(TrainerBase):
                 loss_calculator.losses_unweighted_hist,
                 loss_calculator.stddev_unweighted_hist,
             )
+            
+            dt = time.time() - self.t_start
 
             if is_root():
                 if stage == VAL:
                     logger.info(
-                        f"""validation ({self.cf.general.run_id}) : {mini_epoch:03d} : 
-                        {np.nanmean(avg_loss)}"""
+                        f"validation ({self.cf.general.run_id}) : {mini_epoch:03d} : "
+                        + f"loss = {np.nanmean(avg_loss):.4E} (elapsed={dt:.3f}s)"
                     )
 
                 elif stage == TRAIN:
                     # samples per sec
-                    dt = time.time() - self.t_start
                     len_dataset = len(self.data_loader) // self.batch_size_per_gpu
                     pstr = (
                         f"{mini_epoch:03d} : {bidx:05d}/{len_dataset:05d} : "
                         + f"{self.cf.general.istep:06d} : loss = {np.nanmean(avg_loss):.4E} "
-                        + f"(lr={self.lr_scheduler.get_lr():.2E}, "
+                        + f"(lr={self.lr_scheduler.get_lr():.2E}, elapsed={dt:.3f}s, "
                     )
                     if self.log_grad_norms:
                         pstr += f"gradient norm={self.last_grad_norm:.3f}, "
