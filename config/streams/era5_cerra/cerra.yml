@@ -12,7 +12,7 @@ CERRA :
   filenames : ['cerra-rr-an-oper-0001-mars-5p5km-1984-2022-6h-v3-hmsi.zarr']
   stream_id : 1
   source_exclude : ['skt','tp']
-  target_exclude : ['w_', 'tp']
+  target_exclude : ['tp']
   geoinfo_channels : ['orog', 'lsm']
   loss_weight : 1.
   location_weight : cosine_latitude

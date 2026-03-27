@@ -36,7 +36,7 @@ tp: Total precipitation
 
 https://confluence.ecmwf.int/display/CKB/CERRA-Land+surface+reanalysis%3A+Data+User+Guide
 *source_exclude : ['skt','tp']
-*target_exclude : ['w_', 'tp']
+*target_exclude : ['tp']
 
 
 ## Warning
