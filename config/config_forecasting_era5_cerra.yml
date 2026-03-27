@@ -150,13 +150,13 @@ training_config:
     lr_start: 1e-6
     lr_max: 1e-6
     lr_final_decay: 1e-6
-    lr_final: 0.0
-    num_steps_warmup: 0
+    lr_final: 1e-6
+    num_steps_warmup: 1
     num_steps_cooldown: 0 
-    policy_warmup: "cosine"
+    policy_warmup: "linear"
     policy_decay: "constant"
     policy_cooldown: "linear"
-    parallel_scaling_policy: "sqrt"
+    parallel_scaling_policy: "const"
 
   optimizer:
     grad_clip: 1.0
