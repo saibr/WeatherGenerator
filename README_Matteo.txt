@@ -1,4 +1,6 @@
-### Commands used
+#####################
+### Commands used ###
+#####################
 
 alias agpu="srun -c 8 --mem=128G --account=AIFAC_5C0_154 --partition=boost_usr_prod --gpus-per-node=4 -t 06:00:00 --pty bash -i"
 
@@ -6,8 +8,24 @@ alias agpu="srun -c 8 --mem=128G --account=AIFAC_5C0_154 --partition=boost_usr_p
 
 uv run --offline train --config ./config_forecasting_ERA5_CERRA.yml
 
+##################
+### Evaluation ###
+##################
 
-### Notes
+## Training Plots
+
+## Inference 
+
+# agpu for few samples
+
+# slurm job for entire test set
+
+## Metrics
+
+#############
+### Notes ###
+#############
+
 ## ERA5 variables
 https://confluence.ecmwf.int/display/CKB/ERA5%3A+data+documentation
 z_: geopotential
@@ -31,6 +49,7 @@ sdor: Standard deviation of sub-gridscale orography
 tcw: Total column water
 cp: Convective precipitation
 tp: Total precipitation
+tciwv: Total column integrated water vapour
 
 ## CERRA variables
 

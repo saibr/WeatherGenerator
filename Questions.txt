@@ -1,0 +1,26 @@
+###########################
+### paremeters to check ###
+###########################
+
+### STREAMS ###
+era5.yml
+cerra.yml
+
+- location_weight : cosine_latitude
+- tokenize_spacetime: True
+- num_heads : 8 (for CERRA was just 2)
+- geoinfo_channels: ['orog', 'lsm']
+
+all have been set equal either in ERA5 and CERRA
+
+- max_num_targets: 570000 for CERRA, 20000 for ERA5(o96) or better to set equal?
+
+- CERRA has 'al' 'rsn', 'sde', 'sf' variables related to snow. Do you suggest to remove them to be fair to ERA5? 
+
+### GENERAL CONFIG ###
+config_forecasting_era5_cerra.yml
+
+- samples_per_mini_epoch: 4096
+- Forecast: 
+        num_steps: 3
+
