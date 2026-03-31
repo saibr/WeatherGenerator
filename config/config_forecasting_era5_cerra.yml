@@ -90,7 +90,7 @@ norm_type: "LayerNorm"
 
 #####################################
 
-streams_directory: "./config/streams/era5_cerra/"
+streams_directory: "./config/streams/era5_cerra/" # set to "./config/streams/era5_1deg/"  for era5 training only
 streams: ???
 
 # type of zarr_store
@@ -125,7 +125,7 @@ train_logging:
 # parameters for data loading
 data_loading :
 
-  num_workers: 6
+  num_workers: 12
   rng_seed: ???
   repeat_data_in_mini_epoch : False
 
@@ -140,7 +140,7 @@ training_config:
   samples_per_mini_epoch: 4096
   shuffle: True
 
-  start_date: 1979-01-01T00:00
+  start_date: 1985-01-01T00:00
   end_date: 2022-12-31T00:00
 
   time_window_step: 06:00:00
@@ -148,15 +148,15 @@ training_config:
   
   learning_rate_scheduling :
     lr_start: 1e-6
-    lr_max: 1e-6
-    lr_final_decay: 1e-6
-    lr_final: 1e-6
-    num_steps_warmup: 1
-    num_steps_cooldown: 0 
-    policy_warmup: "linear"
+    lr_max: 5e-5
+    lr_final_decay: 2e-6
+    lr_final: 0.0
+    num_steps_warmup: 256
+    num_steps_cooldown: 512
+    policy_warmup: "cosine"
     policy_decay: "constant"
     policy_cooldown: "linear"
-    parallel_scaling_policy: "const"
+    parallel_scaling_policy: "sqrt"
 
   optimizer:
     grad_clip: 1.0

@@ -9,7 +9,8 @@
 
 CERRA :
   type : anemoi
-  filenames : ['cerra-rr-an-oper-0001-mars-5p5km-1984-2022-6h-v3-hmsi.zarr']
+  filenames : ['cerra-rr-an-oper-se-al-ec-mars-5p5km-1985-2023-3h-v2.zarr']
+  frequency : 6h
   stream_id : 1
   source_exclude : ['skt','tciwv','tp']
   target_exclude : ['tciwv','tp']
@@ -25,11 +26,11 @@ CERRA :
     net : transformer
     num_tokens : 1
     num_heads : 8
-    dim_embed : 256
+    dim_embed : 512
     num_blocks : 2
   embed_target_coords :
     net : linear
-    dim_embed : 256
+    dim_embed : 512
   target_readout :
     num_layers : 2
     num_heads : 4

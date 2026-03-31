@@ -180,7 +180,7 @@ class MultiStreamDataSampler(torch.utils.data.IterableDataset):
 
                     # The same dataset can exist on different locations in the filesystem,
                     # so we need to choose here.
-                    filename = filenames[0]
+                    filename = next(filename for filename in filenames if filename.exists())
 
                 ds_type = stream_info["type"]
                 if is_root():
