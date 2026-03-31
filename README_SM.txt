@@ -22,6 +22,19 @@ uv run --offline train --config ./config_forecasting_ERA5_CERRA.yml
 
 ## Metrics
 
+##########################
+### WG-Private Changes ###
+##########################
+
+- ./hpc/leonardo_aifac/config/paths.yml
+        - add "/leonardo_work/DestE_340_26/ai-ml/datasets" to data_paths
+
+- ./hpc/leonardo_aifac/config/weathergen_slurm
+    set:
+        - #SBATCH --qos=<boost_qos_lprod>
+        - #SBATCH --time=4-00:00:00 or 96:00:00
+
+
 #############
 ### Notes ###
 #############
