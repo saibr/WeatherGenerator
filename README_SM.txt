@@ -13,6 +13,13 @@ uv run --offline train --config ./config_forecasting_ERA5_CERRA.yml
 ##################
 
 ## Training Plots
+uv run --offline plot_train --from_yaml ./config/evaluate/train_plot_config.yml --output_dir ./plots/trials/
+other options:
+ --channels ch1 ch2 ... (default=["avg"]) 
+ --streams (default=["ERA5"])
+ --forecast-steps (default=[0, 1])
+ --metrics (default=["mse"])
+
 
 ## Inference 
 
@@ -65,6 +72,7 @@ tp: Total precipitation
 tciwv: Total column integrated water vapour
 
 ## CERRA variables
+snow related: 'al' 'rsn', 'sde', 'sf' 
 
 https://confluence.ecmwf.int/display/CKB/CERRA-Land+surface+reanalysis%3A+Data+User+Guide
 *source_exclude : ['skt','tp']
