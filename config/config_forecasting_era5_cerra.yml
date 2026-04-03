@@ -232,7 +232,7 @@ wgtags:
   # The name of the organization of the person running the experiment.
   # This may be autofilled in the future. Expected values are lowercase strings 
   # e.g. "ecmwf", "cmcc", "metnor", "jsc", "escience"
-  org: "knmi"
+  org: "knmi-mf"
   # The Github issue corresponding to this run (number such as 1234)
   # Github issues are the central point when running experiment and contain 
   # links to hedgedocs, code branches, pull requests etc.

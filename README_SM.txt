@@ -2,17 +2,36 @@
 ### Commands used ###
 #####################
 
-alias agpu="srun -c 8 --mem=128G --account=AIFAC_5C0_154 --partition=boost_usr_prod --gpus-per-node=4 -t 06:00:00 --pty bash -i"
+### Training ###
 
-# Interactive session
+** Interactive Session (IS)**
 
 uv run --offline train --config ./config_forecasting_ERA5_CERRA.yml
 
-##################
-### Evaluation ###
-##################
+** Slurm job **
+../WeatherGenerator-private/hpc/launch-slurm.py --nodes 2 --config config/config_forecasting_era5_cerra.yml --register
 
-## Training Plots
+### Inference ###
+
+** IS for few samples **
+uv run --offline inference --from-run-id {RUN_ID} \
+ --options test_config.start_date=2023-10-01T00:00 \
+ test_config.end_date=2023-12-31T00:00 \
+ test_config.output.num_samples=1e16
+
+** Slurm job ** 
+
+../WeatherGenerator-private/hpc/launch-slurm.py \
+  --stage inference \
+  --from-run-id <RUN_ID> \
+  --options test_config.start_date=2023-10-01T00:00 \
+test_config.end_date=2023-12-31T00:00 \
+test_config.output.num_samples=1e16
+  --register
+
+### Evaluation ###
+
+** Training Plots **
 uv run --offline plot_train --from_yaml ./config/evaluate/train_plot_config.yml --output_dir ./plots/trials/
 other options:
  --channels ch1 ch2 ... (default=["avg"]) 
@@ -20,26 +39,34 @@ other options:
  --forecast-steps (default=[0, 1])
  --metrics (default=["mse"])
 
+for mlflow we modified the mlflow_upload.py by overriding "weathergen.step" which is not included in the metrics dict
 
-## Inference 
+** Compare runs **
+src/weathergen/utils/compare_run_configs.py --config config/my_runs.yml
 
-# agpu for few samples
+** FastEval **
+in IS
+uv run --offline evaluate --config config/evaluate/pretrain_era5_eval_config.yml
 
-# slurm job for entire test set
-
-## Metrics
+** Metrics **
+-  Quaver ???
 
 ##########################
 ### WG-Private Changes ###
 ##########################
 
 - ./hpc/leonardo_aifac/config/paths.yml
-        - add "/leonardo_work/DestE_340_26/ai-ml/datasets" to data_paths
+        add:
+                - "/leonardo_work/DestE_340_26/ai-ml/datasets" to data_paths
 
 - ./hpc/leonardo_aifac/config/weathergen_slurm
-    set:
-        - #SBATCH --qos=<boost_qos_lprod>
-        - #SBATCH --time=4-00:00:00 or 96:00:00
+        set:
+                - #SBATCH --qos=<boost_qos_lprod>
+                - #SBATCH --time=4-00:00:00 or 96:00:00
+
+- ./hpc/mlflow_upload.py
+        to visualize plots in mlflow:
+                - "weathergen.step" must be overrided, not present in metrics
 
 
 #############

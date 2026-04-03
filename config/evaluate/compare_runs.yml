@@ -1,0 +1,4 @@
+run_ids:
+  - ["gtdxuy6m", "/leonardo_work/AIFAC_5C0_154/weathergen/shared_work/models/"]
+  - ["hmeu6jx4", "/leonardo_work/AIFAC_5C0_154/weathergen/shared_work/models/"] #can use more than two here
+always_show_patterns: ["ae_global*", ]
