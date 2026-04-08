@@ -68,6 +68,13 @@ uv run --offline evaluate --config config/evaluate/pretrain_era5_eval_config.yml
         to visualize plots in mlflow:
                 - "weathergen.step" must be overrided, not present in metrics
 
+- ./hpc/mlflow_upload.py
+        remove package version:
+                - "certifi"
+
+- ./hpc/launch_slurm.py
+        remove package version:
+                - "certifi"
 
 #############
 ### Notes ###

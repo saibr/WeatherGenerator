@@ -84,7 +84,7 @@ latent_noise_use_additive_noise: False
 latent_noise_deterministic_latents: True 
 
 freeze_modules: ""
-load_chkpt: {}
+load_chkpt: {'run_id': 'nu54ygl9', 'mini_epoch': -1}
 
 norm_type: "LayerNorm"
 
@@ -140,7 +140,7 @@ training_config:
   samples_per_mini_epoch: 4096
   shuffle: True
 
-  start_date: 2014-01-01T00:00
+  start_date: 1985-01-01T00:00
   end_date: 2022-12-31T00:00
 
   time_window_step: 06:00:00

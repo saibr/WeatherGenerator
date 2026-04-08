@@ -14,6 +14,7 @@ import logging
 
 import omegaconf
 import torch
+import torch.nn.init as init
 from torch.distributed.fsdp import (
     MixedPrecisionPolicy,
     fully_shard,
@@ -66,6 +67,37 @@ def _initialize_missing_modules(model, missing_keys, with_fsdp):
     if not missing_keys:
         return
 
+    def _initialize_direct_parameters(module, module_path):
+        for param_name, param in module.named_parameters(recurse=False):
+            if param is None or not torch.is_floating_point(param):
+                continue
+
+            full_param_name = f"{module_path}.{param_name}" if module_path else param_name
+            if is_root():
+                logger.warning(
+                    "Initializing parameter with generic fallback because module has no "
+                    "reset_parameters(): %s",
+                    full_param_name,
+                )
+
+            with torch.no_grad():
+                if param.ndim <= 1:
+                    init.zeros_(param)
+                else:
+                    init.normal_(param, mean=0.0, std=0.02)
+
+    def _reset_module_tree(module, module_path):
+        reset_parameters = getattr(module, "reset_parameters", None)
+        if callable(reset_parameters):
+            reset_parameters()
+            return
+
+        _initialize_direct_parameters(module, module_path)
+
+        for child_name, child_module in module.named_children():
+            child_path = f"{module_path}.{child_name}" if module_path else child_name
+            _reset_module_tree(child_module, child_path)
+
     new_modules_to_init = {key.rsplit(".", 1)[0] for key in missing_keys}
 
     root_new_modules = set()
@@ -80,7 +112,7 @@ def _initialize_missing_modules(model, missing_keys, with_fsdp):
         module_to_init = all_modules[path]
         if with_fsdp:
             module_to_init.to_empty(device="cuda")
-        module_to_init.reset_parameters()
+        _reset_module_tree(module_to_init, path)
 
 
 def init_model_and_shard(
