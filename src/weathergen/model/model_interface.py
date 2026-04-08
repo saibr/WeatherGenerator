@@ -44,6 +44,45 @@ logger = logging.getLogger(__name__)
 type TrainingMode = str
 
 
+def _filter_compatible_state_dict(model_state_dict, loaded_state_dict):
+    """Keep only checkpoint tensors whose keys exist and whose shapes still match."""
+
+    filtered_state_dict = {}
+    skipped_shape_mismatch = {}
+
+    for key, value in loaded_state_dict.items():
+        target_value = model_state_dict.get(key)
+        if target_value is None:
+            continue
+        if tuple(target_value.shape) != tuple(value.shape):
+            skipped_shape_mismatch[key] = (tuple(value.shape), tuple(target_value.shape))
+            continue
+        filtered_state_dict[key] = value
+
+    return filtered_state_dict, skipped_shape_mismatch
+
+
+def _initialize_missing_modules(model, missing_keys, with_fsdp):
+    if not missing_keys:
+        return
+
+    new_modules_to_init = {key.rsplit(".", 1)[0] for key in missing_keys}
+
+    root_new_modules = set()
+    for path in sorted(list(new_modules_to_init)):
+        if not any(path.startswith(root + ".") for root in root_new_modules):
+            root_new_modules.add(path)
+
+    all_modules = dict(model.named_modules())
+    for path in root_new_modules:
+        if is_root():
+            logger.info(f"Initializing new module not found in checkpoint: {path}")
+        module_to_init = all_modules[path]
+        if with_fsdp:
+            module_to_init.to_empty(device="cuda")
+        module_to_init.reset_parameters()
+
+
 def init_model_and_shard(
     cf,
     dataset,
@@ -191,6 +230,7 @@ def load_model(cf, model, device, run_id: str, mini_epoch=-1):
     is_model_sharded = cf.with_ddp and cf.with_fsdp
     if is_model_sharded:
         meta_sharded_sd = model.state_dict()
+        params, skipped_shape_mismatch = _filter_compatible_state_dict(meta_sharded_sd, params)
         maybe_sharded_sd = {}
         for param_name, full_tensor in params.items():
             sharded_meta_param = meta_sharded_sd.get(param_name)
@@ -203,26 +243,6 @@ def load_model(cf, model, device, run_id: str, mini_epoch=-1):
             maybe_sharded_sd[param_name] = torch.nn.Parameter(sharded_tensor)
         # choose `assign=True` for sharded model since we cannot call `copy_` on meta tensor
         mkeys, ukeys = model.load_state_dict(maybe_sharded_sd, strict=False, assign=True)
-
-        # new network parts (e.g. for fine-tuning)
-        if mkeys:
-            # Get the unique parent modules for the missing parameters
-            new_modules_to_init = {key.rsplit(".", 1)[0] for key in mkeys}
-
-            # Find the highest-level "root" new modules to avoid redundant initializations
-            root_new_modules = set()
-            for path in sorted(list(new_modules_to_init)):
-                if not any(path.startswith(root + ".") for root in root_new_modules):
-                    root_new_modules.add(path)
-
-            # Get all modules for quick lookup and initialize the new ones
-            all_modules = dict(model.named_modules())
-            for path in root_new_modules:
-                if is_root():
-                    logger.info(f"Initializing new module not found in checkpoint: {path}")
-                module_to_init = all_modules[path]
-                module_to_init.to_empty(device="cuda")
-                module_to_init.reset_parameters()
 
     else:
         # fix mismatch between state_dict keys that can occur between interactive/non-interactive
@@ -240,9 +260,12 @@ def load_model(cf, model, device, run_id: str, mini_epoch=-1):
             for k in params.keys():
                 params_temp[k.replace("module.", "")] = params[k]
             params = params_temp
+        params, skipped_shape_mismatch = _filter_compatible_state_dict(model.state_dict(), params)
         # load checkpoint
         mkeys, ukeys = model.load_state_dict(params, strict=False)
         model = model.to(device)
+
+    _initialize_missing_modules(model, mkeys, is_model_sharded)
 
     # warn about difference in checkpoint and model
     if len(mkeys) == 0 and len(ukeys) == 0:
@@ -251,6 +274,14 @@ def load_model(cf, model, device, run_id: str, mini_epoch=-1):
         logger.warning(f"Missing keys when loading model: {mkeys}")
     if len(ukeys) > 0:
         logger.warning(f"Unused keys when loading model: {ukeys}")
+    if skipped_shape_mismatch:
+        logger.warning(
+            "Skipped checkpoint tensors due to shape mismatch: %s",
+            {
+                key: {"checkpoint": ckpt_shape, "model": model_shape}
+                for key, (ckpt_shape, model_shape) in skipped_shape_mismatch.items()
+            },
+        )
 
     return model
 

@@ -22,6 +22,7 @@ CERRA :
   token_size : 512
   tokenize_spacetime : True
   max_num_targets: 570000
+  #max_num_targets: -1 
   embed : 
     net : transformer
     num_tokens : 1
