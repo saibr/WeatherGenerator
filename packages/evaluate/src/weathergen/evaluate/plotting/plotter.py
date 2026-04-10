@@ -194,37 +194,52 @@ class Plotter:
             _logger.info(f"Creating dir {hist_output_dir}")
             os.makedirs(hist_output_dir)
 
-        for var in variables:
-            select_var = self.select | {"channel": var}
+        for region in self.regions:
+            if region != "global":
+                bbox = RegionBoundingBox.from_region_name(region)
+                target_region = bbox.apply_mask(target)
+                preds_region = bbox.apply_mask(preds)
+            else:
+                target_region = target
+                preds_region = preds
 
-            targ, prd = (
-                self.select_from_da(target, select_var),
-                self.select_from_da(preds, select_var),
-            )
+            for var in variables:
+                select_var = self.select | {"channel": var}
 
-            # Remove NaNs
-            targ = targ.dropna(dim="ipoint")
-            prd = prd.dropna(dim="ipoint")
-            assert targ.size > 0, "Data array must not be empty or contain only NAs"
-            assert prd.size > 0, "Data array must not be empty or contain only NAs"
-
-            if self.plot_subtimesteps:
-                ntimes_unique = len(np.unique(targ.valid_time))
-                _logger.info(
-                    f"Creating histograms for {ntimes_unique} valid times of variable {var}."
+                targ, prd = (
+                    self.select_from_da(target_region, select_var),
+                    self.select_from_da(preds_region, select_var),
                 )
 
-                groups = zip(targ.groupby("valid_time"), prd.groupby("valid_time"), strict=False)
-            else:
-                _logger.info(f"Plotting histogram for all valid times of {var}")
+                # Remove NaNs
+                targ = targ.dropna(dim="ipoint")
+                prd = prd.dropna(dim="ipoint")
+                assert targ.size > 0, "Data array must not be empty or contain only NAs"
+                assert prd.size > 0, "Data array must not be empty or contain only NAs"
 
-                groups = [((None, targ), (None, prd))]  # wrap once with dummy valid_time
+                if self.plot_subtimesteps:
+                    ntimes_unique = len(np.unique(targ.valid_time))
+                    _logger.info(
+                        f"Creating histograms for {ntimes_unique} valid times of variable {var} in region {region}."
+                    )
 
-            for (valid_time, targ_t), (_, prd_t) in groups:
-                if valid_time is not None:
-                    _logger.debug(f"Plotting histogram for {var} at valid_time {valid_time}")
-                name = self.plot_histogram(targ_t, prd_t, hist_output_dir, var, tag=tag)
-                plot_names.append(name)
+                    groups = zip(
+                        targ.groupby("valid_time"), prd.groupby("valid_time"), strict=False
+                    )
+                else:
+                    _logger.info(f"Plotting histogram for all valid times of {var} in region {region}")
+
+                    groups = [((None, targ), (None, prd))]  # wrap once with dummy valid_time
+
+                for (valid_time, targ_t), (_, prd_t) in groups:
+                    if valid_time is not None:
+                        _logger.debug(
+                            f"Plotting histogram for {var} at valid_time {valid_time} in region {region}"
+                        )
+                    name = self.plot_histogram(
+                        targ_t, prd_t, hist_output_dir, var, regionname=region, tag=tag
+                    )
+                    plot_names.append(name)
 
         self.clean_data_selection()
 
@@ -236,6 +251,7 @@ class Plotter:
         pred_data: xr.DataArray,
         hist_output_dir: Path,
         varname: str,
+        regionname: str | None,
         tag: str = "",
     ) -> str:
         """
@@ -291,6 +307,7 @@ class Plotter:
             str(self.sample),
             valid_time,
             self.stream,
+            regionname,
             varname,
             str(self.fstep).zfill(3),
         ]
