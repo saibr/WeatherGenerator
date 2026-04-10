@@ -1,7 +1,7 @@
 #optional: if commented out all is taken care of by the default settings
 # NB. global options apply to all run_ids 
 global_plotting_options:
- regions: ["global"]
+ regions: ["europe"]
  image_format : "png" #options: "png", "pdf", "svg", "eps", "jpg" ..
  dpi_val : 300
  fps: 2
@@ -19,11 +19,11 @@ global_plotting_options:
 
 evaluation:
   metrics  : ["mse","rmse","bias","mae","ets","nse","froct"]
-  regions: ["global"]
+  regions: ["europe"]
   summary_plots : true
   ratio_plots : false
   heat_maps : false
-  summary_dir: "./plots/"
+  summary_dir: "./plots/europe"
   plot_ensemble: "members" #supported: false, "std", "minmax", "members"
   plot_score_maps: false #plot scores on a 2D maps. it slows down score computation 
   print_summary: false #print out score values on screen. it can be verbose
@@ -70,7 +70,8 @@ run_ids :
     label: "ERA5 pretrain trial"
     #NEW: if "streams" is not specified, the default streams are used
   # vsqbzc6u:
-  #   label: "ERA5+CERRA pretrain trial"  
+  #   label: "ERA5+CERRA pretrain trial"
+    
       
   # c8g5katp:
   #   label: "2 steps window"

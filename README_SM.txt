@@ -17,16 +17,16 @@ uv run --offline train --config ./config_forecasting_ERA5_CERRA.yml
 uv run --offline inference --from-run-id {RUN_ID} \
  --options test_config.start_date=2023-10-01T00:00 \
  test_config.end_date=2023-12-31T00:00 \
- test_config.output.num_samples=1e16
+ test_config.output.num_samples=1e16 \
+ test_config.samples_per_mini_epoch=1e4 \
+ streams_directory=./config/inference/streams/era5_o96
 
 ** Slurm job ** 
 
 ../WeatherGenerator-private/hpc/launch-slurm.py \
   --stage inference \
   --from-run-id <RUN_ID> \
-  --options test_config.start_date=2023-10-01T00:00 \
-test_config.end_date=2023-12-31T00:00 \
-test_config.output.num_samples=1e16
+  --config ./config/inference/inference_era_o96_config.yml \
   --register
 
 ### Evaluation ###

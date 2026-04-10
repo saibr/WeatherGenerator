@@ -66,11 +66,12 @@ default_streams:
   #     plot_animations: true
       
 run_ids :
-  bn3ot1ar:
-    label: "ERA5 pretrain trial"
+  # bn3ot1ar:
+  #   label: "ERA5 pretrain trial"
     #NEW: if "streams" is not specified, the default streams are used
-  # vsqbzc6u:
-  #   label: "ERA5+CERRA pretrain trial"  
+  vsqbzc6u:
+    label: "ERA5+CERRA pretrain trial"
+    
       
   # c8g5katp:
   #   label: "2 steps window"

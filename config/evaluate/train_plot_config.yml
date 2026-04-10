@@ -1,8 +1,8 @@
 train:
   plot:
-      gtdxuy6m: 
+      nu54ygl9: 
           slurm_id : 0
           description: "ERA5"
-      hmeu6jx4: 
+      fgorjblh: 
           slurm_id : 0
           description : "ERA5+CERRA"
