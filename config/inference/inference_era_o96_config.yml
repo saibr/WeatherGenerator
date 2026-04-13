@@ -6,4 +6,4 @@ test_config:
   samples_per_mini_epoch: 1.0e+4
   forecast:
     num_steps: 8
-streams_directory: /leonardo/home/userexternal/msalis00/projects/weather_generator/WeatherGenerator/config/inference/streams/era5_o96
+streams_directory: ./config/inference/streams/era5_o96
