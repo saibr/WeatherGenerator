@@ -5,5 +5,5 @@ test_config:
     num_samples: 1.0e+16
   samples_per_mini_epoch: 1.0e+4
   forecast:
-    num_steps: 8
+    num_steps: 9
 streams_directory: ./config/inference/streams/era5_o96_cerra
