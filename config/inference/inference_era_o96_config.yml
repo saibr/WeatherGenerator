@@ -1,9 +1,8 @@
 test_config:
   start_date: 2023-10-01T00:00
-  end_date: 2023-12-31T00:00
   output:
-    num_samples: 1.0e+16
-  samples_per_mini_epoch: 1.0e+4
+    num_samples: 16
+  samples_per_mini_epoch: 16
   forecast:
     num_steps: 9
 streams_directory: ./config/inference/streams/era5_o96
