@@ -243,7 +243,7 @@ wgtags:
   # issue number.
   # Expected values are lowercase strings with no spaces, just underscores:
   # Examples: "rollout_ablation_grid"  
-  exp: "pretraining_era5_o96_n320_2014_cerra_n320_16_geoinfo_2014_loss5"
+  exp: ""
   # *** Experiment-specific tags ***
   # All extra tags (including lists, dictionaries, etc.) are treated 
   # as strings by mlflow, so treat all extra tags as simple string key: value pairs.

@@ -117,8 +117,10 @@ class EmbeddingEngine(torch.nn.Module):
 
         # per cell indices into positional encoding
         tok_counts = batch.tokens_lens.permute([2, 0, 1, 3]).sum(0).flatten()
-        pe_idxs = torch.cat([torch.arange(c) for c in tok_counts])
-
+        rows = torch.arange( tok_counts.max(), device=tok_counts.device).unsqueeze(0)
+        rows = rows.expand(tok_counts.shape[0], -1)
+        pe_idxs = rows[rows < tok_counts.unsqueeze(1)]
+        
         # actual scatter operation
         tokens_all.scatter_(0, scatter_idxs, torch.cat(x_embeds) + pe_embed[pe_idxs])
 
@@ -409,7 +411,7 @@ class ForecastingEngine(torch.nn.Module):
         if mode_cfg.get("forecast", {}).get("policy") is not None:
             for i in range(self.cf.fe_num_blocks):
                 # Alternate between global and local attention
-                if (i % global_rate == 0) or i + 1 == self.cf.ae_global_num_blocks:
+                if (i % global_rate == 0) or i + 1 == self.cf.fe_num_blocks:
                     self.fe_blocks.append(
                         MultiSelfAttentionHead(
                             self.cf.ae_global_dim_embed,
