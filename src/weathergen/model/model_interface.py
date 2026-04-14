@@ -296,6 +296,12 @@ def load_model(cf, model, device, run_id: str, mini_epoch=-1):
         # load checkpoint
         mkeys, ukeys = model.load_state_dict(params, strict=False)
         model = model.to(device)
+    
+    # # Print all keys that were correctly loaded
+    # loaded_keys = [k for k in params.keys() if k not in skipped_shape_mismatch]
+    # logger.info(f"Loaded parameter keys ({len(loaded_keys)}):")
+    # for k in loaded_keys:
+    #     logger.info(f"  {k}")
 
     _initialize_missing_modules(model, mkeys, is_model_sharded)
 

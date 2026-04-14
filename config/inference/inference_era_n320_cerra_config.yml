@@ -5,4 +5,4 @@ test_config:
   samples_per_mini_epoch: 16
   forecast:
     num_steps: 9
-streams_directory: ./config/inference/streams/era5_n320/
+streams_directory: ./config/inference/streams/era5_n320_cerra/

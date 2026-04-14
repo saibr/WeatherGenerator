@@ -25,6 +25,7 @@ uv run --offline inference --from-run-id {RUN_ID} \
 
 ../WeatherGenerator-private/hpc/launch-slurm.py \
   --stage inference \
+  --nodes 1 (or 2 -- but seems to be forced to 1 for inference)
   --from-run-id <RUN_ID> \
   --config ./config/inference/inference_era_o96_config.yml \
   --register
