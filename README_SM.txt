@@ -32,7 +32,7 @@ uv run --offline inference --from-run-id {RUN_ID} \
 
 ### Evaluation ###
 
-** Training Plots **
+*** Training Plots ***
 uv run --offline plot_train --from_yaml ./config/evaluate/train_plot_config.yml --output_dir ./plots/trials/
 other options:
  --channels ch1 ch2 ... (default=["avg"]) 
@@ -42,15 +42,16 @@ other options:
 
 for mlflow we modified the mlflow_upload.py by overriding "weathergen.step" which is not included in the metrics dict
 
-** Compare runs **
+*** Compare runs ***
 src/weathergen/utils/compare_run_configs.py --config config/my_runs.yml
 
-** FastEval **
-in IS
+*** FastEval ***
+
+** IS **
 uv run --offline evaluate --config config/evaluate/pretrain_era5_eval_config.yml
 
-** Metrics **
--  Quaver ???
+** Slurm job ** 
+sbatch evaluation_slurm.sh config/evaluate/{EVAL_CONFIG}.yml
 
 ##########################
 ### WG-Private Changes ###
@@ -108,6 +109,10 @@ tciwv: Total column integrated water vapour
 
 ## CERRA variables
 snow related: 'al' 'rsn', 'sde', 'sf' 
+
+r_: should be relative humidity
+10_si: should be speed intensity
+10wdir: wind direction
 
 https://confluence.ecmwf.int/display/CKB/CERRA-Land+surface+reanalysis%3A+Data+User+Guide
 *source_exclude : ['skt','tp']

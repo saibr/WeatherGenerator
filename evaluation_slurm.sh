@@ -6,7 +6,7 @@
 #SBATCH --mem=368G
 #SBATCH --cpus-per-task=8
 #SBATCH --ntasks-per-node=4
-#SBATCH --gpus-per-node=4
+#SBATCH --gpus-per-node=0
 #SBATCH --time=23:59:59
 #SBATCH --output=logs/%x.%j.out
 #SBATCH --error=logs/%x.%j.err
