@@ -14,12 +14,8 @@ uv run --offline train --config ./config_forecasting_ERA5_CERRA.yml
 ### Inference ###
 
 ** IS for few samples **
-uv run --offline inference --from-run-id {RUN_ID} \
- --options test_config.start_date=2023-10-01T00:00 \
- test_config.end_date=2023-12-31T00:00 \
- test_config.output.num_samples=1e16 \
- test_config.samples_per_mini_epoch=1e4 \
- streams_directory=./config/inference/streams/era5_o96
+uv run --offline inference --from-run-id <RUN_ID>\
+ --config ./config/inference/<config_file> \
 
 ** Slurm job ** 
 
@@ -32,17 +28,22 @@ uv run --offline inference --from-run-id {RUN_ID} \
 
 ### Evaluation ###
 
-*** Training Plots ***
-uv run --offline plot_train --from_yaml ./config/evaluate/train_plot_config.yml --output_dir ./plots/trials/
-other options:
+** Training Plots **
+uv run --offline plot_train --from_yaml ./config/evaluate/train_plot_config.yml \
+ --output_dir ./plots/trials/
  --channels ch1 ch2 ... (default=["avg"]) 
- --streams (default=["ERA5"])
- --forecast-steps (default=[0, 1])
- --metrics (default=["mse"])
+ --streams ERA5 (default=["ERA5"])
+ --forecast-steps 0 1 2 (default=[0, 1])
+ --metrics mse (default=["mse"])
 
+** MlFlow **
 for mlflow we modified the mlflow_upload.py by overriding "weathergen.step" which is not included in the metrics dict
 
-*** Compare runs ***
+run ../WeatherGenerator-private/hpc/upload_experiment.py --run-id <RUN_ID> \
+ --experiment-location /leonardo_work/AIFAC_5C0_154/weathergen/shared_work \
+ --model no
+
+** Compare runs **
 src/weathergen/utils/compare_run_configs.py --config config/my_runs.yml
 
 *** FastEval ***
@@ -51,6 +52,9 @@ src/weathergen/utils/compare_run_configs.py --config config/my_runs.yml
 uv run --offline evaluate --config config/evaluate/pretrain_era5_eval_config.yml
 
 ** Slurm job ** 
+you need the links, if you don't have run: ./scripts/actions.sh create-links
+be aware to set properly the run_id in the config file, and wait that the job is running before making midification to it
+
 sbatch evaluation_slurm.sh config/evaluate/{EVAL_CONFIG}.yml
 
 ##########################
