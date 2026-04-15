@@ -16,16 +16,28 @@ module load gcc/12.2.0
 module load cuda/12.2
 
 if [ $# -lt 1 ]; then
-    echo "Usage: $0 <config_file.yml>"
+    echo "Usage: $0 <config_file.yml> [run_id]"
     exit 1
 fi
 
 CONFIG_FILE="$1"
+RUN_ID="$2"
 
 echo "Starting Evaluation Job at $(date)"
 echo "Using config: $CONFIG_FILE"
 
+TMP_CONFIG=$(mktemp)
+
+if [ -n "$RUN_ID" ]; then
+    yq e ".run_ids |= with_entries(.key = \"$RUN_ID\")" "$CONFIG_FILE" > "$TMP_CONFIG"
+else
+    cp "$CONFIG_FILE" "$TMP_CONFIG"
+fi
+
+echo "Modified config:"
+cat "$TMP_CONFIG"
+
 # Run Evaluation
-uv run --offline evaluate --config "$CONFIG_FILE"
+uv run --offline evaluate --config "$TMP_CONFIG"
 
 echo "Finished Evaluation Job at $(date)"

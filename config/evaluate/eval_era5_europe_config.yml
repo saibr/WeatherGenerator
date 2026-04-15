@@ -65,16 +65,16 @@ default_streams:
       
 run_ids :
   ykw3st9v:
-    label: "ERA5-O96"
+    label: "ERA5-N320"
     #NEW: if "streams" is not specified, the default streams are used
   # vsqbzc6u:
   #   label: "ERA5+CERRA pretrain trial"
     
-  zm0xe4qv:
-    label: "ERA5-O96"
+  #zm0xe4qv:
+  #  label: "ERA5-O96"
 
-  ddsetkb8:
-    label: "ERA5-O96"
+  #ddsetkb8:
+  #  label: "ERA5-O96"
   # c8g5katp:
   #   label: "2 steps window"
   #   results_base_dir : "./results/"
