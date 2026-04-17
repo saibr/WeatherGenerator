@@ -1,0 +1,11 @@
+# "_" means new stage of Curriculum Learning
+# "+" means streams are used jointly
+# (start_year-num_epochs)
+train:
+  plot:
+    nu54ygl9: 
+          slurm_id : 0
+          description: "ERA5-O96(1985-64)"
+    fgorjblh:
+          slurm_id: 0
+          description: "ERA5-O96+CERRA(1985-64)"

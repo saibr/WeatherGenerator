@@ -30,7 +30,7 @@ uv run --offline inference --from-run-id <RUN_ID>\
 
 ** Training Plots **
 uv run --offline plot_train --from_yaml ./config/evaluate/train_plot_config.yml \
- --output_dir ./plots/trials/
+ --output_dir ./plots/MF_KNMI/ERA_CERRA_experiments
  --channels ch1 ch2 ... (default=["avg"]) 
  --streams ERA5 (default=["ERA5"])
  --forecast-steps 0 1 2 (default=[0, 1])

@@ -9,6 +9,9 @@ train:
       fbclk6da:
           slurm_id : 0
           description : "ERA5-O96(1985-64)_ERA5-O96+CERRA(2014-16)"
+      a2ljwguv:
+          slurm_id : 0
+          description : "ERA5-O96(1985-32)_ERA5-O96+CERRA(1985-32)"
       bawkrdsg:
           slurm_id : 0
           description : "ERA5-O96(1985-32)_ERA5-O96+CERRA(2014-32)"
