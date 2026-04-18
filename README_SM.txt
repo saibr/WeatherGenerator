@@ -36,6 +36,8 @@ uv run --offline plot_train --from_yaml ./config/evaluate/train_plot_config.yml 
  --forecast-steps 0 1 2 (default=[0, 1])
  --metrics mse (default=["mse"])
 
+uv run --offline plot_train --from_yaml ./config/evaluate/train_plot_config_CERRA.yml --output_dir ./plots/MF_KNMI/ERA_CERRA_experiments/hedgedoc/headline_scores/1/CERRA_loss_plots/ --channels 2t 10si 10wdir r_850 t_850  u_850 v_850 z_500 --streams "CERRA" --forecast-steps 0 1 2 --metrics mse
+
 ** MlFlow **
 for mlflow we modified the mlflow_upload.py by overriding "weathergen.step" which is not included in the metrics dict
 
