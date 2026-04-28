@@ -1,39 +1,28 @@
-#optional: if commented out all is taken care of by the default settings
-# NB. global options apply to all run_ids 
 global_plotting_options:
  regions: ["global","europe"]
- image_format : "png" #options: "png", "pdf", "svg", "eps", "jpg" ..
+ image_format : "png" 
  dpi_val : 300
  fps: 2
  ERA5:
    marker_size: 2
    scale_marker_size: 1
    marker: "o"
-   # alpha: 0.5
-  #  2t: 
-  #    vmin: 250
-  #    vmax: 300
-  #  10u:
-  #    vmin: -40
-  #    vmax: 40
 
 evaluation:
-  metrics  : ["mse","rmse","bias","mae","ets","nse","froct"]
+  metrics  : ["rmse","bias","mae"]
   regions: ["global","europe"]
   summary_plots : true
-  ratio_plots : false
-  heat_maps : false
-  summary_dir: "./plots/"
-  plot_ensemble: "members" #supported: false, "std", "minmax", "members"
+  ratio_plots : true
+  heat_maps : true
+  summary_dir: "./plots/MF_KNMI/eval_plots/"
+  plot_ensemble: false #supported: false, "std", "minmax", "members"
   plot_score_maps: false #plot scores on a 2D maps. it slows down score computation 
   print_summary: false #print out score values on screen. it can be verbose
   log_scale: false
   add_grid: false
   score_cards: false
   bar_plots: true
-  num_processes: 0  #options: int, "auto", 0 means no parallelism (default)
-  # baseline: "ar40mckx"
-
+  num_processes: "auto"  #options: int, "auto", 0 means no parallelism (default)
 
 default_streams:
   ERA5:
@@ -41,160 +30,17 @@ default_streams:
     evaluation:
       forecast_step: "all"
       sample: "all"
-      ensemble: "all" #supported: "all", "mean", [0,1,2]
+      ensemble: "all" 
     plotting:
-      sample: [1,8,16]
-      forecast_step: [1,5,7] #supported: "all", [1,2,3,...], "1-50" (equivalent of [1,2,3,...50])
-      ensemble: "mean" #supported: "all", "mean", [0,1,2]
+      sample: [0]
+      forecast_step: [1,3,5,7] 
+      ensemble: "mean" 
       plot_maps: true
       plot_bias: true
       plot_target: true
       plot_histograms: true
       plot_animations: true
-  # CERRA:
-  #   channels: ["z_500", "t_850", "u_850"] #, "blah"]
-  #   evaluation:
-  #     forecast_step: "all"
-  #     sample: "all"
-  #   plotting:
-  #     sample: [2, 3, 0]
-  #     forecast_step: [1,3, 4, 5]
-  #     plot_maps: true
-  #     plot_bias: false
-  #     plot_target: false
-  #     plot_histograms: true
-  #     plot_animations: true
       
 run_ids :
-  h9a2dh68:
-    label: "ERA5-O96"
-    #NEW: if "streams" is not specified, the default streams are used
-  # vsqbzc6u:
-  #   label: "ERA5+CERRA pretrain trial"  
-      
-  # c8g5katp:
-  #   label: "2 steps window"
-  #   results_base_dir : "./results/"
-  #   #NEW: if "streams" is not specified, the default streams are used
-  
-  ###############################
-  ########## EXAMPLES ###########
-  ###############################
-
-  #How to define custom variables different than default_streams (default_streams will be ignored for this run_id):
-
-  # jjc9ym62:
-  #   label: "2 steps window"
-  #   results_base_dir : "./results/"
-  #   epoch: 1 #optional: if not specified epoch 0 (in inference it is always 0) is used
-  #   rank: 2 #optional: if not specified rank 0 is used
-  #   streams:
-  #     ERA5:
-  #       channels: ["2t", "10u", "10v"] 
-  #       evaluation:
-  #         forecast_step: "all"
-  #         sample: "all"
-  #         ensemble: "mean" 
-  #       plotting:
-  #         sample: [1, 3]
-  #         forecast_step: [1,3, 2]
-  #         ensemble: "mean" 
-  #         plot_maps: true
-  #         plot_bias: false
-  #         plot_target: false
-  #         plot_histograms: true
-  #         plot_animations: true
-
-  
-
-  #WeatherGeneratorMerge example:
-  ###############################
-
-  # #Example of syntax to stack multiple runs over the ensemble dimension  
-  # merge_test: #<------ This is the new run_id name of the merged dataset. NB. you always need to specify one
-  #   type: "merge" # <------- VERY IMPORTANT
-  #   merge_run_ids:
-  #     - so67dku4
-  #     - c9cg8ql3
-  #   merge_metrics_dir: "./merge_test/metrics/" #<------- VERY IMPORTANT
-  #   label: "Merged Results"
-  #   results_base_dir : "./results/"
-  #   streams:
-  #     ERA5:
-  #       channels: ["z_500", "t_850", "u_850", "v_850", "q_850"]
-  #       evaluation:
-  #         forecast_step: [2,4,6] 
-  #         sample: [0, 1, 2, 3]
-  #         ensemble: "all" 
-
-  #WeatherGeneratorJSON example:
-  ##############################
-
-  # #Example of syntax to run over pre-computed scores when the .zarr output is not available anymore
-  # so67dku1:
-  #   type: "json" # <------- VERY IMPORTANT
-  #   label: "WeatherGenerator"
-  #   results_base_dir : "./results/"
-  #   streams:
-  #     ERA5:
-  #       channels: ["z_500", "t_850", "u_850", "v_850", "q_850"]
-  #       evaluation:
-  #         forecast_step: [2,4,6] 
-  #         sample: [0, 1, 2, 3]
-  #         ensemble: "all" #supported
-
-  # #WeatherGeneratorMerge JSON example:
-  # ###############################
-
-  # #Example of syntax to stack multiple runs over the ensemble dimension  
-  # merge_test: #<------ This is the new run_id name of the merged dataset. NB. you always need to specify one
-  #   type: "jsonmerge" # <------- VERY IMPORTANT
-  #   merge_run_ids:
-  #     - so67dku4
-  #     - c9cg8ql3
-  #   merge_metrics_dir: "./merge_test/metrics/" #<------- VERY IMPORTANT
-  #   label: "Merged Results"
-  #   results_base_dir : "./results/"
-  #   streams:
-  #     ERA5:
-  #       channels: ["z_500", "t_850", "u_850", "v_850", "q_850"]
-  #       evaluation:
-  #         forecast_step: [2,4,6] 
-  #         sample: [0, 1, 2, 3]
-  #         ensemble: "all" 
-
-  # # CSV Reader example:
-  # ###############################
-
-  # #ADVANCED (please handle with care): example of how to use the csv reader to Plot PanguWeather scores computed with quaver
-  # pangu:
-  #   type: "csv"
-  #   label: "Pangu-Weather"
-  #   metrics_dir: "<path to folder>"
-  #   streams: 
-  #     ERA5: 
-  #       channels: ["2t", "q_850", "t_850", "z_500"]
-  #       evaluation: 
-  #         forecast_step: "all"
-  #         sample: "all"
-  
-  # graphcast:
-  #   type: "csv"
-  #   label: "GraphCast"
-  #   metrics_dir: "<path to folder>"
-  #   streams: 
-  #     ERA5: 
-  #       channels: ["2t", "q_850", "t_850", "z_500"]
-  #       evaluation: 
-  #         forecast_step: "all"
-  #         sample: "all"
-  
-  # #mertics with parameters example:
-  # ###############################
-
-  # #Example of syntax to pass parameters to individual metrics
-  # evaluation:
-  #   metrics:
-  #   - fbi:
-  #       thresh: 280
-  #   - rmse
+  xxx:
+    label:
