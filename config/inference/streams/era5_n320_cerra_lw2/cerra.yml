@@ -9,7 +9,7 @@
 
 CERRA :
   type : anemoi
-  filenames : ['/leonardo_work/DestE_340_26/ai-ml/datasets/cerra-rr-an-oper-se-al-ec-mars-5p5km-1985-2023-3h-v2.zarr']
+  filenames : ['cerra-rr-an-oper-se-al-ec-mars-5p5km-1985-2023-3h-v2.zarr']
   frequency : 6h
   stream_id : 1
   source_exclude : ['skt','tciwv','tp','al','rsn','sde','sf']
