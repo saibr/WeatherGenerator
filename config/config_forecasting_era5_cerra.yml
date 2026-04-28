@@ -84,13 +84,13 @@ latent_noise_use_additive_noise: False
 latent_noise_deterministic_latents: True 
 
 freeze_modules: ""
-load_chkpt: {'run_id': 'qgnvcrky', 'mini_epoch': -1}
+load_chkpt: {}
 
 norm_type: "LayerNorm"
 
 #####################################
 
-streams_directory: "./config/streams/era5_n320_cerra/" #"./config/streams/era5_cerra/" set to "./config/streams/era5_1deg/"  for era5 training only
+streams_directory: "./config/streams/era5_o96_cerra/" #"./config/streams/era5_cerra/" set to "./config/streams/era5_1deg/"  for era5 training only
 streams: ???
 
 # type of zarr_store
@@ -136,11 +136,11 @@ training_config:
   # training_mode: "masking", "student_teacher", "latent_loss"
   training_mode: ["masking"]
 
-  num_mini_epochs: 16
+  num_mini_epochs: 64
   samples_per_mini_epoch: 4096
   shuffle: True
 
-  start_date: 2014-01-01T00:00
+  start_date: 1985-01-01T00:00
   end_date: 2022-12-31T00:00
 
   time_window_step: 06:00:00
@@ -243,7 +243,7 @@ wgtags:
   # issue number.
   # Expected values are lowercase strings with no spaces, just underscores:
   # Examples: "rollout_ablation_grid"  
-  exp: ""
+  exp: "pretraining_era5_o96_cerra"
   # *** Experiment-specific tags ***
   # All extra tags (including lists, dictionaries, etc.) are treated 
   # as strings by mlflow, so treat all extra tags as simple string key: value pairs.

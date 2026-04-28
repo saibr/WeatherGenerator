@@ -9,7 +9,10 @@
 uv run --offline train --config ./config_forecasting_ERA5_CERRA.yml
 
 ** Slurm job **
-../WeatherGenerator-private/hpc/launch-slurm.py --nodes 2 --config config/config_forecasting_era5_cerra.yml --register
+../WeatherGenerator-private/hpc/launch-slurm.py --nodes 2 \
+ --config config/config_forecasting_era5_cerra.yml \
+ --chain-jobs <int> \
+ --register
 
 ### Inference ###
 
@@ -21,6 +24,7 @@ uv run --offline inference --from-run-id <RUN_ID>\
 
 ../WeatherGenerator-private/hpc/launch-slurm.py \
   --stage inference \
+  --run-id 
   --nodes 1 (or 2 -- but seems to be forced to 1 for inference)
   --from-run-id <RUN_ID> \
   --config ./config/inference/inference_era_o96_config.yml \
@@ -32,9 +36,11 @@ uv run --offline inference --from-run-id <RUN_ID>\
 uv run --offline plot_train --from_yaml ./config/evaluate/train_plot_config.yml \
  --output_dir ./plots/MF_KNMI/ERA_CERRA_experiments
  --channels ch1 ch2 ... (default=["avg"]) 
- --streams ERA5 (default=["ERA5"])
+ --streams "ERA5" (default=["ERA5"])
  --forecast-steps 0 1 2 (default=[0, 1])
  --metrics mse (default=["mse"])
+ --per-stream-y-lim 1e-3 1 (two int)
+ --per-stream-x-lim 0 200000 (two int)
 
 uv run --offline plot_train --from_yaml ./config/evaluate/train_plot_config_CERRA.yml --output_dir ./plots/MF_KNMI/ERA_CERRA_experiments/hedgedoc/headline_scores/1/CERRA_loss_plots/ --channels 2t 10si 10wdir r_850 t_850  u_850 v_850 z_500 --streams "CERRA" --forecast-steps 0 1 2 --metrics mse
 
@@ -53,16 +59,11 @@ src/weathergen/utils/compare_run_configs.py --config config/my_runs.yml
 ** IS **
 uv run --offline evaluate --config config/evaluate/pretrain_era5_eval_config.yml
 
-** Slurm job ** 
-you need the links, if you don't have run: ./scripts/actions.sh create-links
-be aware to set properly the run_id in the config file, and wait that the job is running before making midification to it
-
-sbatch evaluation_slurm.sh config/evaluate/{EVAL_CONFIG}.yml
-
 ##########################
 ### WG-Private Changes ###
 ##########################
 
+For Leonardo:
 - ./hpc/leonardo_aifac/config/paths.yml
         add:
                 - "/leonardo_work/DestE_340_26/ai-ml/datasets" to data_paths
@@ -71,6 +72,12 @@ sbatch evaluation_slurm.sh config/evaluate/{EVAL_CONFIG}.yml
         set:
                 - #SBATCH --qos=<boost_qos_lprod>
                 - #SBATCH --time=4-00:00:00 or 96:00:00
+
+For jupiter, if you have account or project permission errors when launching slurm jobs:
+- ./hpc/leonardo_aifac/config/paths.yml
+        set:
+                post_train:
+                        slurm_account: "<YOUR-PROJECT>"
 
 - ./hpc/mlflow_upload.py
         to visualize plots in mlflow:
@@ -96,6 +103,9 @@ q_: specific umidity
 t_: temperature
 r_: relative humidity
 tcwv: Total column water vapour
+lsm: land sea mask
+msl: mean sea level pressure
+z_: 
 
 *source_exclude : ['w_', 'skt', 'tcw', 'cp', 'tp']
 w_: Vertical velocity
