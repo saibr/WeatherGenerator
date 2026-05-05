@@ -12,7 +12,7 @@ embed_unembed_mode: "block"
 embed_dropout_rate: 0.1
 
 ae_local_dim_embed: 2048
-ae_local_num_blocks: 2
+ae_local_num_blocks: 0
 ae_local_num_heads: 16
 ae_local_dropout_rate: 0.1
 ae_local_with_qk_lnorm: True
@@ -90,7 +90,7 @@ norm_type: "LayerNorm"
 
 #####################################
 
-streams_directory: "./config/streams/era5_o96_cerra/" #"./config/streams/era5_cerra/" set to "./config/streams/era5_1deg/"  for era5 training only
+streams_directory: "./config/streams/era5_o96/" #"./config/streams/era5_cerra/" set to "./config/streams/era5_1deg/"  for era5 training only
 streams: ???
 
 # type of zarr_store
@@ -243,7 +243,7 @@ wgtags:
   # issue number.
   # Expected values are lowercase strings with no spaces, just underscores:
   # Examples: "rollout_ablation_grid"  
-  exp: "pretraining_era5_o96_cerra"
+  exp: "pretraining_era5_o96"
   # *** Experiment-specific tags ***
   # All extra tags (including lists, dictionaries, etc.) are treated 
   # as strings by mlflow, so treat all extra tags as simple string key: value pairs.
