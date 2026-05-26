@@ -1,0 +1,234 @@
+# Debug config v2: proper single-batch overfitting experiment.
+# Changes from overfit_one_batch.yml:
+#
+#  1. samples_per_mini_epoch: 1  — one gradient step per mini_epoch.
+#     Training loss is now logged at bidx=0 thanks to the fix in trainer.py
+#     (_log_terminal no longer requires bidx > 0).
+#
+#  2. ALL dropout rates: 0.0  — removes all stochastic regularization.
+#
+#  3. weight_decay: 0.0  — removes L2 regularization.
+#
+#  4. fe_impute_latent_noise_std: 0.0  — deterministic forward passes.
+#     (default_config.yml already has 0.0; this was accidentally set to 1e-4.)
+#
+#  5. Adam betas corrected for single GPU:
+#     beta1: 0.98125 == 0.85^(1/8) was for 8-GPU DDP.  Standard beta1=0.9.
+#
+#  6. lr_max: 1e-4  — reduced from 5e-4 to prevent gradient overshoot spikes.
+#     Runs b82tuo1b / v57k4j0f / vvo8y4t0 all showed repeated loss spikes
+#     (worst: +840% at epoch 241 in v57k4j0f) with lr_max=5e-4+constant schedule.
+#
+#  7. num_steps: 1  — simplest forecasting task (predict t+6h only).
+#
+#  8. fe_layer_norm_after_blocks: []  — [7] was a dead index (only 6 blocks: 0-5).
+#
+#  9. num_mini_epochs: 3000  — increased to compensate for lower lr_max.
+#
+# Stream-level change required (NOT overrideable from here):
+#  - In config/streams/era5_n320/era5.yml and cerra/cerra.yml set:
+#      max_num_targets: -1
+#    (use all target points; the current 270k random subsample re-rolls every
+#     epoch via rng.choice, making the loss surface change each step.)
+#
+# (C) Copyright 2025 WeatherGenerator contributors.
+#
+# This software is licensed under the terms of the Apache Licence Version 2.0
+# which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+
+embed_orientation: "channels"
+embed_unembed_mode: "block"
+embed_dropout_rate: 0.0        # was 0.1
+
+ae_local_dim_embed: 2048
+ae_local_num_blocks: 2
+ae_local_num_heads: 16
+ae_local_dropout_rate: 0.0     # was 0.1
+ae_local_with_qk_lnorm: True
+
+ae_local_num_queries: 1
+ae_local_queries_per_cell: False
+ae_adapter_num_heads: 16
+ae_adapter_embed: 128
+ae_adapter_with_qk_lnorm: True
+ae_adapter_with_residual: True
+ae_adapter_dropout_rate: 0.0   # was 0.1
+
+ae_global_dim_embed: 2048
+ae_global_num_blocks: 4
+ae_global_num_heads: 32
+ae_global_dropout_rate: 0.0    # was 0.1
+ae_global_with_qk_lnorm: True
+ae_global_att_dense_rate: 1.0
+ae_global_block_factor: 64
+ae_global_mlp_hidden_factor: 2
+ae_global_trailing_layer_norm: False
+
+ae_aggregation_num_blocks: 0
+ae_aggregation_num_heads: 32
+ae_aggregation_dropout_rate: 0.0  # was 0.1
+ae_aggregation_with_qk_lnorm: True
+ae_aggregation_att_dense_rate: 1.0
+ae_aggregation_block_factor: 64
+ae_aggregation_mlp_hidden_factor: 2
+
+decoder_type: PerceiverIOCoordConditioning
+pred_adapter_kv: False
+pred_self_attention: True
+pred_dyadic_dims: False
+pred_mlp_adaln: True
+num_class_tokens: 0
+num_register_tokens: 0
+
+fe_num_blocks: 6
+fe_num_heads: 16
+fe_dropout_rate: 0.0           # was 0.1
+fe_with_qk_lnorm: True
+fe_layer_norm_after_blocks: [] # was [7] — index 7 never exists with 6 blocks (0-5)
+fe_impute_latent_noise_std: 0.0  # was 1e-4 — deterministic forward pass
+forecast_att_dense_rate: 1.0
+
+healpix_level: 4
+
+rope_2D: False
+
+with_mixed_precision: True
+with_flash_attention: True
+compile_model: False
+with_fsdp: False
+attention_dtype: bf16
+mixed_precision_dtype: bf16
+mlp_norm_eps: 1e-5
+norm_eps: 1e-4
+
+latent_noise_kl_weight: 0.0
+latent_noise_gamma: 2.0
+latent_noise_saturate_encodings: 5
+latent_noise_use_additive_noise: False
+latent_noise_deterministic_latents: True
+
+freeze_modules: ""
+load_chkpt: {}
+
+norm_type: "LayerNorm"
+
+#####################################
+
+streams: ???
+
+zarr_store: "zip"
+
+general:
+
+  istep: 0
+  rank: ???
+  world_size: ???
+
+  with_ddp: False
+
+  multiprocessing_method: "fork"
+
+  desc: ""
+  run_id: ???
+  run_history: []
+
+# Log every training step so the loss is visible.
+# trainer.py _log_terminal now logs at bidx=0 (bidx > 0 guard removed),
+# so training loss is printed each mini_epoch with samples_per_mini_epoch: 1.
+train_logging:
+  terminal: 1
+  metrics: 20
+  checkpoint: 1000000
+
+data_loading:
+  rng_seed: ???
+  repeat_data_in_mini_epoch: True  # same sample is repeated within each epoch
+  num_workers: 0
+
+training_config:
+
+  training_mode: ["masking"]
+
+  num_mini_epochs: 3000          # increased from 2000 to compensate for lower lr_max
+  samples_per_mini_epoch: 2      # one gradient step per mini_epoch
+  shuffle: False
+
+  start_date: 1985-01-01T00:00
+  end_date: 2022-12-31T00:00
+
+  time_window_step: 06:00:00
+  time_window_len: 06:00:00
+
+  learning_rate_scheduling:
+    lr_start: 1e-5
+    lr_max: 1e-4               # reduced from 5e-4 to prevent gradient overshoot spikes
+    lr_final_decay: 1e-5
+    lr_final: 0.0
+    num_steps_warmup: 30       # ~1% of total steps (3000)
+    num_steps_cooldown: 300    # final cooldown over last 10% of steps
+    policy_warmup: "cosine"
+    policy_decay: "cosine"
+    policy_cooldown: "linear"
+    parallel_scaling_policy: "sqrt"
+
+  optimizer:
+    grad_clip: 1.0
+    weight_decay: 0.0          # was 0.1; no L2 regularization for overfitting
+    log_grad_norms: False
+    adamw:
+      # Corrected for single GPU (world_size=1, no DDP gradient averaging).
+      # Original values (0.98125, 0.9875) were designed for 8-GPU DDP:
+      #   beta1_per_gpu = 1 - (1 - 0.98125) * 8 = 0.85 effective per-GPU.
+      beta1: 0.9               # was 0.98125
+      beta2: 0.99              # was 0.9875
+      eps: 2e-08
+
+  losses: {
+    "physical": {
+        type: LossPhysical,
+        loss_fcts: { "mse": { }, },
+        },
+    }
+
+  model_input: {
+    "forecasting": {
+      masking_strategy: "forecast"
+      },
+    }
+
+  forecast:
+      time_step: 06:00:00
+      offset: 1
+      num_steps: 1             # was 3; start with simplest single-step forecast
+      policy: "fixed"
+
+
+# Validation on the same year as training so we can measure in-sample performance.
+# The training batch is fixed (shuffle: False, repeat_data_in_mini_epoch: True),
+# so using the same date range gives a meaningful proxy for training fit.
+validation_config:
+
+  samples_per_mini_epoch: 2
+  shuffle: False
+
+  start_date: 1985-01-01T00:00  # same year as training start — in-sample check
+  end_date: 1985-12-31T00:00
+
+  validate_with_ema:
+    enabled: False
+    ema_ramp_up_ratio: 0.09
+    ema_halflife_in_thousands: 1e-3
+
+  output: {
+    num_samples: 0,
+    normalized_samples: False,
+    streams: null,
+    }
+
+  validate_before_training: True  # log initial loss so we can track progress
+
+wgtags:
+  org: "knmi-mf"
+  issue: null
+  exp: "overfit_v2"
+  grid: null

@@ -228,27 +228,33 @@ class EncoderModule(torch.nn.Module):
 
         zero_pad = torch.zeros(1, device=tokens_global_unmasked.device, dtype=torch.int32)
 
-        # permute to use ae_local_num_queries as the batchsize and no_of_tokens
-        # as seq len for flash attention
-        tokens_global_unmasked = torch.permute(tokens_global_unmasked, [1, 0, 2])
-
+        # tokens_global_unmasked: (total_unmasked, num_queries, global_dim)
         cell_lens_unflattened = torch.sum(tokens_lens, 2)
         cell_mask = cell_lens_unflattened.to(torch.bool)
         batch_lens = cell_mask.sum(dim=-1).flatten()
         expected_len = batch_lens.sum().item()
-        actual_len = tokens_global_unmasked.shape[1]
+        actual_len = tokens_global_unmasked.shape[0]
         assert expected_len == actual_len, (
             f"Shape mismatch: expected {expected_len}, got {actual_len}"
         )
-        tokens_global_unmasked = torch.split(tokens_global_unmasked.squeeze(0), list(batch_lens))
-        tokens_global_unmasked = torch.cat(
-            [
-                t
-                for tup in zip(tokens_global_register_class, tokens_global_unmasked, strict=False)
-                for t in tup
-            ],
-            dim=0,
-        )
+        # Flatten query dim into embed dim: (total_unmasked, num_queries * global_dim).
+        # For num_queries=1 this is identical to the previous squeeze(0).
+        # assimilate_local undoes this via reshape(..., q_c_shape[-2], q_c_shape[-1]).
+        tokens_global_unmasked = tokens_global_unmasked.flatten(1, 2)
+        if self.num_register_tokens + self.num_class_tokens > 0:
+            assert self.cf.ae_local_num_queries == 1, (
+                "ae_aggregation with register/class tokens and ae_local_num_queries > 1 "
+                "is not yet supported"
+            )
+            tokens_global_unmasked = torch.split(tokens_global_unmasked, list(batch_lens))
+            tokens_global_unmasked = torch.cat(
+                [
+                    t
+                    for tup in zip(tokens_global_register_class, tokens_global_unmasked, strict=False)
+                    for t in tup
+                ],
+                dim=0,
+            )
 
         # Build packed coords matching the interleaved token order
         if rope_cell_coords is not None:
@@ -266,6 +272,10 @@ class EncoderModule(torch.nn.Module):
 
         batch_lens = batch_lens + (self.num_class_tokens + self.num_register_tokens)
         batch_lens_patched = torch.cat([zero_pad, batch_lens], dim=0)
+        assert (
+            len(self.ae_aggregation_engine.ae_aggregation_blocks) == 0
+            or self.cf.ae_local_num_queries == 1
+        ), "ae_aggregation_num_blocks > 0 with ae_local_num_queries > 1 is not yet supported"
         tokens_global_unmasked = self.ae_aggregation_engine(
             tokens_global_unmasked, batch_lens_patched, use_reentrant=False, coords=packed_coords
         )
@@ -319,14 +329,14 @@ class EncoderModule(torch.nn.Module):
         )
 
         # final processing
-
-        tokens_global = (
-            torch.permute(tokens_global, [1, 0, 2])
-            .squeeze()
-            .reshape(rs, self.num_healpix_cells, -1)
-        )
-        # TODO, TODO, TODO: do we need this
-        tokens_global = torch.cat([tokens_global_register_class, tokens_global], dim=1)
+        # tokens_global: (rs * num_healpix_cells, num_queries, global_dim)
+        # reshape to (rs, num_healpix_cells, num_queries * global_dim) — C-contiguous,
+        # so cell j gets [q0_j, q1_j, ...] which is the correct ordering for the mask fill
+        # and the subsequent reshape+flatten into the global token sequence.
+        tokens_global = tokens_global.reshape(rs, self.num_healpix_cells, -1)
+        # prepend register/class tokens per batch sample (no-op when num_extra_tokens == 0)
+        if num_extra_tokens > 0:
+            tokens_global = torch.cat([tokens_global_register_class, tokens_global], dim=1)
 
         # create mask from cell lens
         mask_reg_class_tokens = (

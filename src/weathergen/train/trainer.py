@@ -785,7 +785,7 @@ class Trainer(TrainerBase):
 
     def _log_terminal(self, bidx: int, mini_epoch: int, stage: Stage):
         print_freq = self.train_logging.terminal
-        if bidx % print_freq == 0 and bidx > 0 or stage == VAL:
+        if bidx % print_freq == 0 or stage == VAL:
             # compute from last iteration
             loss_calculator = self.loss_calculator_val if stage == VAL else self.loss_calculator
             avg_loss, losses_all, _ = prepare_losses_for_logging(

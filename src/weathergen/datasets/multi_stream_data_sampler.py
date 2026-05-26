@@ -98,6 +98,8 @@ class MultiStreamDataSampler(torch.utils.data.IterableDataset):
         self.rank = cf.rank
         self.world_size = cf.world_size
         self.repeat_data = cf.data_loading.get("repeat_data_in_mini_epoch", False)
+        self.log_batch_samples = cf.data_loading.get("log_batch_samples", False)
+        self.log_batch_samples_max_batches = cf.data_loading.get("log_batch_samples_max_batches", -1)
 
         # initialise healpic
         self.healpix_level = cf.healpix_level
@@ -776,6 +778,21 @@ Set repeat_data_in_mini_epoch to True if this is undesired."
                     logger.warning(f"Skipping empty batch with idx={idx}.")
                 else:
                     break
+
+            if self.log_batch_samples and (
+                self.log_batch_samples_max_batches < 0 or i < self.log_batch_samples_max_batches
+            ):
+                time_win = self.time_window_handler.window(idx)
+                logger.info(
+                    "batch_sample"
+                    + f" rank={self.rank}"
+                    + f" mini_epoch={self.mini_epoch}"
+                    + f" batch_idx={i}"
+                    + f" sample_idx={int(idx)}"
+                    + f" forecast_steps={int(num_forecast_steps)}"
+                    + f" window_start={time_win.start}"
+                    + f" window_end={time_win.end}"
+                )
 
             yield batch
 
