@@ -1,0 +1,31 @@
+# obs_types
+# 0 : polar orbiting satellites
+# 1 : geostationay satellites
+# 2 : conventional observations
+
+Titan :
+  type : anemoi
+  stream_id : 1
+  filenames : ['arome-an-oper-titan-0p025-2020-2023-6h-v3-eurw.zarr']
+  loss_weight : 1.0
+  diagnostic: True
+  masking_rate : 0.6
+  masking_rate_none : 0.05
+  token_size : 64
+  tokenize_spacetime : True
+  max_num_targets: -1
+  embed : 
+    net : transformer
+    num_tokens : 1
+    num_heads : 2
+    dim_embed : 512
+    num_blocks : 2
+  embed_target_coords : 
+    net : linear
+    dim_embed : 512
+  target_readout :
+    num_layers : 2
+    num_heads : 4
+  pred_head : 
+    ens_size : 1
+    num_layers : 1

@@ -15,13 +15,13 @@ CERRA :
   source_exclude : ['skt','tciwv','tp','al','rsn','sde','sf']
   target_exclude : ['tciwv','tp','al','rsn','sde','sf']
   geoinfo_channels : ['orog', 'lsm']
-  loss_weight : 1
+  loss_weight : 0.033898305
   location_weight : cosine_latitude
   masking_rate : 0.6
   masking_rate_none : 0.05
   token_size : 128
   tokenize_spacetime : True
-  max_num_targets: 570000
+  max_num_targets: -1
   #max_num_targets: -1 
   embed : 
     net : transformer
