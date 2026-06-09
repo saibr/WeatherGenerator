@@ -90,7 +90,7 @@ norm_type: "LayerNorm"
 
 #####################################
 
-streams_directory: "./config/streams/era5_o96_cerra/" #"./config/streams/era5_cerra/" set to "./config/streams/era5_1deg/"  for era5 training only
+streams_directory: "./config/streams/era5_o96_cerra_geoinfo/" #"./config/streams/era5_cerra/" set to "./config/streams/era5_1deg/"  for era5 training only
 streams: ???
 
 # type of zarr_store
@@ -125,7 +125,7 @@ train_logging:
 # parameters for data loading
 data_loading :
 
-  num_workers: 12
+  num_workers: 8
   rng_seed: ???
   repeat_data_in_mini_epoch : False
 
@@ -136,7 +136,7 @@ training_config:
   # training_mode: "masking", "student_teacher", "latent_loss"
   training_mode: ["masking"]
 
-  num_mini_epochs: 32
+  num_mini_epochs: 64
   samples_per_mini_epoch: 4096
   shuffle: True
 
@@ -232,7 +232,7 @@ wgtags:
   # The name of the organization of the person running the experiment.
   # This may be autofilled in the future. Expected values are lowercase strings 
   # e.g. "ecmwf", "cmcc", "metnor", "jsc", "escience"
-  org: "knmi-mf"
+  org: "mf"
   # The Github issue corresponding to this run (number such as 1234)
   # Github issues are the central point when running experiment and contain 
   # links to hedgedocs, code branches, pull requests etc.
@@ -243,7 +243,7 @@ wgtags:
   # issue number.
   # Expected values are lowercase strings with no spaces, just underscores:
   # Examples: "rollout_ablation_grid"  
-  exp: "pretraining_era5_o96_cerra_lw"
+  exp: "pretraining_era5_o96_cerra_geoinfo"
   # *** Experiment-specific tags ***
   # All extra tags (including lists, dictionaries, etc.) are treated 
   # as strings by mlflow, so treat all extra tags as simple string key: value pairs.
