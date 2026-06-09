@@ -1,0 +1,14 @@
+train:
+  plot:
+      vfz3r2q0:
+          slurm_id : 0
+          description: "lw=1"
+      ctrqk6ip: 
+          slurm_id : 0
+          description: "ERA5-O96 lw=1 - CERRA lw=2"
+      f2xsm4k7: 
+          slurm_id : 0
+          description: "ERA5-O96 lw=2 - CERRA lw=1"
+      cpo2ubv8:
+          slurm_id : 0
+          description: "ERA5-O96 lw=0.966101695 - CERRA lw=0.033898305"

@@ -1,0 +1,8 @@
+train:
+  plot:
+      plh61ukz :
+          slurm_id : 0
+          description: "extended geoinfo"
+      clybuhes: 
+          slurm_id : 0
+          description: "geoinfo orog and lsm"

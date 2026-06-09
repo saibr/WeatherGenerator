@@ -1,0 +1,19 @@
+train:
+  plot:
+      lv06lyp2:
+          slurm_id : 0
+          description: "ERA5-O96 - geoinfo none"
+      nu54ygl9: 
+          slurm_id : 0
+          description: "ERA5-O96 - geoinfo lsm"
+      ad0hegz3: 
+          slurm_id : 0
+          description: "ERA5-O96 - geoinfo z and lsm"
+          color: "tab:green"
+      ii1q5hxa:
+          slurm_id : 0
+          description: "ad0hegz3 - Resumed"
+          color: "tab:green"
+      nlhzj6xo:
+          slurm_id : 0
+          description: "ERA5-O96 - geoinfo extended"

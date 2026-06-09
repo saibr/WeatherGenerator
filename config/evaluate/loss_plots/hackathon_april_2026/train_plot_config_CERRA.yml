@@ -1,0 +1,39 @@
+# "_" means new stage of Curriculum Learning
+# "+" means streams are used jointly
+# (start_yearnum_epochs)
+
+train:
+  plot:
+      fbclk6da:
+          slurm_id : 0
+          description : "O96(1985,64)->CERRA+O96(2014,16)"
+      a2ljwguv:
+          slurm_id : 0
+          description : "O96(1985,32)->CERRA+O96(1985,32)"
+      bawkrdsg:
+          slurm_id : 0
+          description : "O96(1985,32)->CERRA+O96(2014,32)"
+      mh25s4fd:
+          slurm_id : 0
+          description : "O96(1985,64)->N320(1985,16)->CERRA+O96(1985,16)"
+      nr2vt45n:
+          slurm_id: 0
+          description: "O96(1985,64)->N320(1985,16)->CERRA+N320(1985,16)"
+      i2zecsk7:
+          slurm_id: 0
+          description: "O96(1985,64)->N320(1985,16)->CERRA+N320(2014,16)"
+      a8zpygou:
+          slurm_id: 0
+          description: "O96(1985,64)->N320(2014,16)->CERRA+O96(2014,16)"
+      anxd2cq5:
+          slurm_id: 0
+          description: "O96(1985,64)->N320(2014,16)->CERRA+N320(2014,16)"
+      ghpe27y4:
+          slurm_id: 0
+          description: "O96(1985,64)->N320(2014,16)->CERRA+N320(2014,16,loss_w2)"
+      bj7kdv4m:
+          slurm_id: 0
+          description: "O96(1985,64)->N320(2014,16)->CERRA+N320(2014,16,loss_w5)"
+      fgorjblh:
+          slurm_id: 0
+          description: "JOINT(O96+CERRA,1985,64)"

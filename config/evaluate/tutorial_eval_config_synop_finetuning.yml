@@ -1,0 +1,36 @@
+global_plotting_options:
+  image_format : "png" #options: "png", "pdf", "svg", "eps", "jpg" ..
+  regions: ["europe"]
+  dpi_val : 300
+  SurfaceCombined:
+    marker_size: 6
+    obsvalue_t2m_0:
+      vmin: 265
+      vmax: 300
+
+evaluation:
+  metrics  : ["froct", "rmse","bias"]
+  regions: ["europe"]
+  summary_plots : true
+  summary_dir: "./plots/"
+  print_summary: false #print out score values on screen. it can be verbose
+  log_scale: false
+  add_grid: true
+
+run_ids :
+  il6tisq7:
+   label: "SYNOP fine-tuning"
+   epoch: 0
+   rank: 0
+   streams:
+     SurfaceCombined:
+       channels: ["obsvalue_t2m_0"]
+       evaluation:
+         sample: "all"
+         forecast_step: "all"
+       plotting:
+         sample: [0]
+         forecast_step:  1-40
+         plot_maps: true
+         plot_animations: true
+         plot_histograms: true
