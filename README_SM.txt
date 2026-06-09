@@ -7,6 +7,11 @@
 ** Interactive Session (IS)**
 
 uv run --offline train --config ./config_forecasting_ERA5_CERRA.yml
+to continue specify also --from-run-id --run-id --mini-epoch 48 otherwise continue from last_checkpoint
+furthermore in the general training config set:
+        - istep to the last istep before the last saved checkpoint
+        - run_history as iterables of tuples of run_id and istep of last saved checkpoint
+        - be aware that world size must be equal otherwise mini epoch count will be no more consistent
 
 ** Slurm job **
 ../WeatherGenerator-private/hpc/launch-slurm.py --nodes 2 \
@@ -19,16 +24,20 @@ uv run --offline train --config ./config_forecasting_ERA5_CERRA.yml
 ** IS for few samples **
 uv run --offline inference --from-run-id <RUN_ID>\
  --config ./config/inference/<config_file> \
+ --mini-epoch
+ --time=12:00:00 \ otherwise it is just 1h
 
 ** Slurm job ** 
 
 ../WeatherGenerator-private/hpc/launch-slurm.py \
   --stage inference \
   --run-id 
+  --mini-epoch
   --nodes 1 (or 2 -- but seems to be forced to 1 for inference)
   --from-run-id <RUN_ID> \
   --config ./config/inference/inference_era_o96_config.yml \
-  --register
+  --register or --no-register
+  --time=12:00:00 \ otherwise it is just 1h
 
 ### Evaluation ###
 
@@ -90,6 +99,40 @@ For jupiter, if you have account or project permission errors when launching slu
 - ./hpc/launch_slurm.py
         remove package version:
                 - "certifi"
+
+#############
+Cristian Lusanna Geoinfo
+#############
+
+You need the anemoi integration in multi_stream_data_sampler.py
+
+We removed one check (give error):
+self.check_same_grid(d1, d2) commented in anemoi/datasets/data
+
+#############
+FastEval Changes
+(packages/evaluate)
+#############
+
+### Exporter ###
+
+To export GRIB we (MF) have commented two lines in export/parsers/quaver_parser.py
+
+252    "expver": self.expver,
+253    "marsClass": "rd",
+
+### Regions ###
+
+Added AROME region into utils/regions.py, line 32
+"arome": (37.0, 56.0, -12.0, 16.0),
+
+###############
+plot_training
+###############
+
+We (MF) produced a version of plot_training with the possibility of:
+- specify colors
+- merge runs
 
 #############
 ### Notes ###
