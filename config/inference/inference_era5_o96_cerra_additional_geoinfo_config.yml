@@ -1,0 +1,10 @@
+data_loading:
+  num_workers: 4
+test_config:
+  start_date: 2023-10-01T00:00
+  output:
+    num_samples: 64
+  samples_per_mini_epoch: 64
+  forecast:
+    num_steps: 9
+streams_directory: ./config/inference/streams/era5_o96_cerra_geoinfo_baseline/

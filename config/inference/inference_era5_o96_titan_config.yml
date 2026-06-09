@@ -1,0 +1,11 @@
+data_loading:
+  num_workers: 8
+test_config:
+  start_date: 2023-10-30T00:00 # 2023-07-10T00:00 # 2023-08-20T00:00 
+  end_date: 2023-11-04T00:00 # 2023-07-13T00:00 # 2023-08-25T00:00 # last Ciara
+  output:
+    num_samples: 128
+  samples_per_mini_epoch: 128
+  forecast:
+    num_steps: 9
+streams_directory: ./config/inference/streams/era5_o96_titan/
