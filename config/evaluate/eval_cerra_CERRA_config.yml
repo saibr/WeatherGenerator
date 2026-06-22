@@ -1,0 +1,77 @@
+
+global_plotting_options:
+ regions: ["cerra"]
+ image_format : "png" 
+ dpi_val : 300
+ fps: 2
+
+evaluation:
+  metrics  : ["rmse","bias","mae"]
+  regions: ["cerra"]
+  summary_plots : true
+  ratio_plots : true
+  heat_maps : false
+  summary_dir: "./plots/MF_KNMI/eval_plots/ERA5_CERRA_baseline/CERRA_domain"
+  plot_ensemble: false #supported: false, "std", "minmax", "members"
+  plot_score_maps: false #plot scores on a 2D maps. it slows down score computation 
+  print_summary: false #print out score values on screen. it can be verbose
+  log_scale: false
+  add_grid: false
+  score_cards: false
+  bar_plots: true
+  num_processes: "auto"  #options: int, "auto", 0 means no parallelism (default)
+  
+default_streams:
+  CERRA:
+    channels: ["2t", "2r", "r_1000", "10si", "10wdir", "r_850", "t_850", "u_850", "v_850", "z_500", "msl"] #, "blah"]
+    evaluation:
+      forecast_step: "all"
+      sample: "all"
+      ensemble: "all"
+    plotting:
+      sample: [0,60,110]
+      forecast_step: [1,3,5,7,9] 
+      ensemble: "mean"
+      plot_maps: true
+      plot_bias: true
+      plot_target: true
+      plot_histograms: true
+      plot_animations: true
+      
+run_ids :
+  hgok74i8 :
+    #type: "json"
+    label: "ERA5 --> CERRA"
+    rank: "all"
+    color: "tab:blue"
+
+  ydw5sorz :
+    #type: "json"
+    label: "ERA5 + CERRA --> CERRA"
+    rank: "all"
+    color: "tab:orange"
+
+  f88yha0q:
+    #type: "json"
+    label: "ERA5 + CERRA --> ERA5 + CERRA"
+    rank: "all"
+    color: "tab:green"
+
+  tsqtj0vn:
+    #type: "json"
+    label: "ERA5 + CERRA --> ERA5 + CERRA with LW"
+    rank: "all"
+    color: "tab:red"
+
+  tqq8dhmn:
+    #type: "json"
+    label: "ERA5 --> ERA5 + CERRA"
+    rank: "all"
+    color: "tab:purple"
+  
+  jnflhjjw:
+    #type: "json"
+    label: "ERA5 + CERRA_GEOinfo --> ERA5 + CERRA"
+    rank: "all"
+    color: "tab:brown"
+
