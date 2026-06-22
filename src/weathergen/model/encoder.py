@@ -7,6 +7,8 @@
 # granted to it by virtue of its status as an intergovernmental organisation
 # nor does it submit to any jurisdiction.
 
+import copy
+
 import torch
 from astropy_healpix import healpy
 from torch.utils.checkpoint import checkpoint
@@ -25,6 +27,7 @@ from weathergen.model.engines import (
 # from weathergen.model.model import ModelParams
 from weathergen.model.parametrised_prob_dist import LatentInterpolator
 from weathergen.model.positional_encoding import positional_encoding_harmonic
+from weathergen.utils.distributed import is_root
 
 
 class EncoderModule(torch.nn.Module):
@@ -95,8 +98,11 @@ class EncoderModule(torch.nn.Module):
                 .unsqueeze(1)
                 .repeat((1, cf.ae_local_num_queries, 2))
             )
+            #theta, phi = healpy.pix2ang(
+            #    nside=2**self.healpix_level, ipix=torch.arange(self.num_healpix_cells)
+            #)
             theta, phi = healpy.pix2ang(
-                nside=2**self.healpix_level, ipix=torch.arange(self.num_healpix_cells)
+                nside=2**self.healpix_level, ipix=torch.arange(self.num_healpix_cells).cpu().numpy()
             )
             q_cells[:, :, -6:-3] = (
                 torch.cos(theta).unsqueeze(1).unsqueeze(1).repeat((1, cf.ae_local_num_queries, 3))
@@ -130,6 +136,14 @@ class EncoderModule(torch.nn.Module):
             self.assimilate_local, model_params, stream_cell_tokens, batch, use_reentrant=False
         )
 
+        stream_diag = self._compute_stream_only_global_tokens_for_diag(
+            model_params, stream_cell_tokens, batch, "ERA5"
+        )
+        if stream_diag is not None:
+            self._print_stream_cosine_diag(
+                "ae_adapter", tokens_global, stream_diag["tokens_global"], stream_diag["mask"]
+            )
+
         tokens_global = checkpoint(
             self.ae_global_engine,
             tokens_global,
@@ -137,7 +151,117 @@ class EncoderModule(torch.nn.Module):
             use_reentrant=False,
         )
 
+        if stream_diag is not None:
+            fork_devices = [tokens_global.device.index] if tokens_global.is_cuda else []
+            with torch.random.fork_rng(devices=fork_devices):
+                with torch.no_grad():
+                    tokens_global_stream = self.ae_global_engine(
+                        stream_diag["tokens_global"], coords=model_params.rope_coords
+                    )
+            self._print_stream_cosine_diag(
+                "ae_global", tokens_global, tokens_global_stream, stream_diag["mask"]
+            )
+
         return tokens_global, posteriors
+
+    def _should_run_stream_similarity_diag(self, last_step_attr: str) -> bool:
+        train_logging = self.cf.get("train_logging", {})
+        interval = train_logging.get(
+            "stream_similarity_interval",
+            train_logging.get("cosine_similarity_interval", 1),
+        )
+        # ALWAYS default to 1 step interval if misconfigured
+        interval = max(int(interval), 1)
+
+        # IMPORTANT: do NOT rely on cf.general.istep (often stale / not updated)
+        # Instead use a local counter on the module
+        if not hasattr(self, "_diag_step"):
+            self._diag_step = 0
+
+        self._diag_step += 1
+
+        if self._diag_step % interval != 0:
+            return False
+
+        return True
+
+    def _compute_stream_only_global_tokens_for_diag(
+        self, model_params, tokens: torch.Tensor, batch: ModelBatch, stream_name: str
+    ):
+        if not self._should_run_stream_similarity_diag(
+            "_last_adapter_global_similarity_diag_step"
+        ):
+            return None
+
+        stream_names = list(self.cf.streams.keys())
+        if stream_name not in stream_names:
+            return None
+
+        stream_idx = stream_names.index(stream_name)
+        tokens_lens_by_stream = batch.tokens_lens.permute([2, 0, 1, 3]).flatten(1, -1)
+        stream_counts = tokens_lens_by_stream[stream_idx]
+        if stream_counts.sum() == 0:
+            return None
+
+        full_counts = tokens_lens_by_stream.sum(0)
+        prev_counts = tokens_lens_by_stream[:stream_idx].sum(0)
+        max_tokens = full_counts.max()
+        if max_tokens == 0:
+            return None
+
+        rows = torch.arange(max_tokens, device=tokens.device).unsqueeze(0)
+        valid = (rows >= prev_counts.unsqueeze(1)) & (
+            rows < (prev_counts + stream_counts).unsqueeze(1)
+        )
+        cell_offsets = torch.cat(
+            [
+                torch.zeros(1, device=tokens.device, dtype=torch.int64),
+                full_counts.cumsum(0)[:-1].to(torch.int64),
+            ]
+        )
+        idxs = (cell_offsets.unsqueeze(1) + rows).to(torch.int64)[valid]
+        if idxs.numel() == 0:
+            return None
+
+        stream_tokens_lens = torch.zeros_like(batch.tokens_lens)
+        stream_tokens_lens[:, :, stream_idx, :] = batch.tokens_lens[:, :, stream_idx, :]
+        stream_batch = copy.copy(batch)
+        stream_batch.tokens_lens = stream_tokens_lens
+
+        rs = batch.get_num_steps() * len(batch)
+        cell_mask = stream_counts.reshape(rs, self.num_healpix_cells).to(torch.bool)
+        num_extra_tokens = self.num_register_tokens + self.num_class_tokens
+        if num_extra_tokens > 0:
+            extra_mask = torch.zeros(
+                rs, num_extra_tokens, device=tokens.device, dtype=torch.bool
+            )
+            cell_mask = torch.cat([extra_mask, cell_mask], dim=1)
+        token_mask = cell_mask.repeat_interleave(self.q_cells.shape[-2], dim=1).flatten()
+
+        fork_devices = [tokens.device.index] if tokens.is_cuda else []
+        with torch.random.fork_rng(devices=fork_devices):
+            with torch.no_grad():
+                tokens_global_stream, _ = self.assimilate_local(
+                    model_params, tokens.detach()[idxs], stream_batch, enable_similarity_diag=False
+                )
+
+        return {"tokens_global": tokens_global_stream, "mask": token_mask}
+
+    def _print_stream_cosine_diag(
+        self, name: str, tokens_full: torch.Tensor, tokens_stream: torch.Tensor, token_mask: torch.Tensor
+    ) -> None:
+        if token_mask.sum() == 0:
+            return
+        if not is_root():
+            return
+
+        full_flat = tokens_full.reshape(-1, tokens_full.shape[-1])[token_mask].detach().float().flatten()
+        stream_flat = (
+            tokens_stream.reshape(-1, tokens_stream.shape[-1])[token_mask].detach().float().flatten()
+        )
+        denom = full_flat.norm() * stream_flat.norm()
+        cos_sim = torch.dot(full_flat, stream_flat) / denom.clamp_min(torch.finfo(denom.dtype).eps)
+        print(f"{name} full-vs-ERA5-only cos_sim = {cos_sim.item():.3e}")
 
     def interpolate_latents(self, tokens: torch.Tensor) -> (torch.Tensor, torch.Tensor):
         """ "
@@ -153,7 +277,9 @@ class EncoderModule(torch.nn.Module):
 
         return tokens, posteriors
 
-    def assimilate_local_project_chunked(self, tokens, tokens_global, cell_lens, q_cells_lens):
+    def assimilate_local_project_chunked(
+        self, tokens, tokens_global, cell_lens, q_cells_lens, tokens_lens=None
+    ):
         """
         Apply the local assimilation engine and then the
         local-to-global adapter using a chunking in the number of tokens
@@ -167,6 +293,7 @@ class EncoderModule(torch.nn.Module):
         clen = self.num_healpix_cells // (2 if self.cf.healpix_level <= 5 else 8)
         tokens_global_unmasked = []
         posteriors = []
+        local_similarity_diag = self._init_ae_local_stream_similarity_diag(tokens_lens)
 
         for i in range(cell_lens.shape[0] // clen):
             # make sure we properly catch all elements in last chunk
@@ -188,7 +315,11 @@ class EncoderModule(torch.nn.Module):
             q_cells_lens_cur = q_cells_lens[: cell_lens_cur.shape[0]]
 
             # local assimilation model
+            toks_in = toks
             toks = self.ae_local_engine(toks, cell_lens_cur, use_reentrant=False)
+            self._accumulate_ae_local_stream_similarity_diag(
+                local_similarity_diag, toks_in, toks, i * clen, i_end
+            )
 
             toks, posteriors_c = self.interpolate_latents(toks)
             posteriors += [posteriors_c]
@@ -212,8 +343,104 @@ class EncoderModule(torch.nn.Module):
         if len(tokens_global_unmasked) == 0:
             assert False, "Not yet implemented"
         tokens_global_unmasked = torch.cat(tokens_global_unmasked)
+        self._print_ae_local_stream_similarity_diag(local_similarity_diag)
 
         return tokens_global_unmasked, posteriors
+
+    def _init_ae_local_stream_similarity_diag(self, tokens_lens):
+        if not self._should_run_stream_similarity_diag("_last_ae_local_similarity_diag_step"):
+            return None
+
+        stream_names = list(self.cf.streams.keys())
+        if tokens_lens is None or "ERA5" not in stream_names:
+            return None
+
+        return {
+            "stream_name": "ERA5",
+            "stream_idx": stream_names.index("ERA5"),
+            "tokens_lens_by_stream": tokens_lens.permute([2, 0, 1, 3]).flatten(1, -1),
+            "dot": None,
+            "full_norm_sq": None,
+            "stream_norm_sq": None,
+            "num_tokens": 0,
+        }
+
+    def _accumulate_ae_local_stream_similarity_diag(
+        self, diag, tokens_full_in, z_full, cell_start, cell_end
+    ) -> None:
+        if diag is None:
+            return
+
+        stream_idx = diag["stream_idx"]
+        chunk_counts = diag["tokens_lens_by_stream"][:, cell_start:cell_end]
+        stream_counts = chunk_counts[stream_idx]
+        if stream_counts.sum() == 0:
+            return
+
+        full_counts = chunk_counts.sum(0)
+        prev_counts = chunk_counts[:stream_idx].sum(0)
+        max_tokens = full_counts.max()
+        if max_tokens == 0:
+            return
+
+        rows = torch.arange(max_tokens, device=tokens_full_in.device).unsqueeze(0)
+        valid = (rows >= prev_counts.unsqueeze(1)) & (
+            rows < (prev_counts + stream_counts).unsqueeze(1)
+        )
+        cell_offsets = torch.cat(
+            [
+                torch.zeros(1, device=tokens_full_in.device, dtype=torch.int64),
+                full_counts.cumsum(0)[:-1].to(torch.int64),
+            ]
+        )
+        idxs = (cell_offsets.unsqueeze(1) + rows).to(torch.int64)[valid]
+        if idxs.numel() == 0:
+            return
+
+        stream_cell_lens = torch.cat(
+            [
+                torch.zeros(1, device=tokens_full_in.device, dtype=torch.int32),
+                stream_counts.to(torch.int32),
+            ]
+        )
+        fork_devices = [tokens_full_in.device.index] if tokens_full_in.is_cuda else []
+
+        with torch.random.fork_rng(devices=fork_devices):
+            with torch.no_grad():
+                z_stream_only = self.ae_local_engine(
+                    tokens_full_in.detach()[idxs], stream_cell_lens, use_reentrant=False
+                )
+                z_full_stream = z_full.detach()[idxs].float().flatten()
+                z_stream_only = z_stream_only.float().flatten()
+                dot = torch.dot(z_full_stream, z_stream_only)
+                full_norm_sq = torch.dot(z_full_stream, z_full_stream)
+                stream_norm_sq = torch.dot(z_stream_only, z_stream_only)
+
+        diag["dot"] = dot if diag["dot"] is None else diag["dot"] + dot
+        diag["full_norm_sq"] = (
+            full_norm_sq
+            if diag["full_norm_sq"] is None
+            else diag["full_norm_sq"] + full_norm_sq
+        )
+        diag["stream_norm_sq"] = (
+            stream_norm_sq
+            if diag["stream_norm_sq"] is None
+            else diag["stream_norm_sq"] + stream_norm_sq
+        )
+        diag["num_tokens"] += idxs.numel()
+
+    def _print_ae_local_stream_similarity_diag(self, diag) -> None:
+        if diag is None or diag["num_tokens"] == 0:
+            return
+        if not is_root():
+            return
+
+        denom = torch.sqrt(diag["full_norm_sq"]) * torch.sqrt(diag["stream_norm_sq"])
+        cos_sim = diag["dot"] / denom.clamp_min(torch.finfo(denom.dtype).eps)
+        print(
+            f"ae_local full-vs-{diag['stream_name']}-only cos_sim = "
+            f"{cos_sim.item():.3e} ({diag['num_tokens']} tokens)"
+        )
 
     def aggregation_engine_unmasked(
         self,
@@ -283,7 +510,11 @@ class EncoderModule(torch.nn.Module):
         return tokens_global_unmasked
 
     def assimilate_local(
-        self, model_params, tokens: torch.Tensor, batch: ModelBatch
+        self,
+        model_params,
+        tokens: torch.Tensor,
+        batch: ModelBatch,
+        enable_similarity_diag: bool = True,
     ) -> torch.Tensor:
         """
         Processes embedded tokens locally and prepares them for the global assimilation
@@ -317,7 +548,11 @@ class EncoderModule(torch.nn.Module):
 
         # apply local assimilation engine and project onto global latent vectors
         tokens_global_unmasked, posteriors = self.assimilate_local_project_chunked(
-            tokens, tokens_global, cell_lens, model_params.q_cells_lens
+            tokens,
+            tokens_global,
+            cell_lens,
+            model_params.q_cells_lens,
+            batch.tokens_lens if enable_similarity_diag else None,
         )
 
         # apply aggregation engine on unmasked tokens

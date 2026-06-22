@@ -55,8 +55,15 @@ def init_model_and_shard(
     with torch.device(model_creation_device):
         model = get_model(cf, training_mode, dataset, overrides)
 
+        for name, module in model.named_modules():
+            print(f"{name}: {module.__class__.__name__}")
+
     # freeze request model part
     apply_fct_to_blocks(model, cf.freeze_modules, freeze_weights)
+    print("\nFrozen parameters:")
+    for name, param in model.named_parameters():
+        if not param.requires_grad:
+            print(name)
 
     # TODO: this should be handled in the encoder to be close where q_cells is defined
     if "q_cells" in cf.freeze_modules:

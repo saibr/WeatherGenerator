@@ -216,7 +216,11 @@ class LearningRateScheduler:
             # make sure lr_max_scaled rate is used if warm-up end is not lr_max_scaled
             if cur_lr < self.lr:
                 for g in self.optimizer.param_groups:
-                    g["lr"] = self.lr
+                    # preserve per-group ratio relative to base lr
+                    ratio = g["initial_lr"] / self.optimizer.defaults["lr"]
+                    g["lr"] = self.lr * ratio
+                    #g["lr"] = self.lr
+
         else:
             self.cur_scheduler.step()
             self.lr = self.cur_scheduler.get_last_lr()[0]

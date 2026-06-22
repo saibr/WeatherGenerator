@@ -30,6 +30,7 @@ from weathergen.model.embeddings import (
 )
 from weathergen.model.layers import MLP
 from weathergen.model.utils import ActivationFactory
+from weathergen.utils.distributed import is_root
 from weathergen.utils.utils import get_dtype
 
 
@@ -105,7 +106,9 @@ class EmbeddingEngine(torch.nn.Module):
                 continue
 
             # embedding from physical space to per patch latent representation
-            x_embeds += [self.embeds[stream_name](sdata).flatten(0, 1)]
+            tokens = self.embeds[stream_name](sdata).flatten(0, 1)
+            self._print_stream_token_stats(stream_name, tokens)
+            x_embeds += [tokens]
 
         # switch from stream to cell-based ordering and apply per cell positional encoding
 
@@ -131,6 +134,30 @@ class EmbeddingEngine(torch.nn.Module):
         tokens_all = tokens_all + pe_embed[pe_idxs]
 
         return tokens_all
+
+    def _print_stream_token_stats(self, stream_name: str, tokens: torch.Tensor) -> None:
+        if stream_name not in ("ERA5", "CERRA"):
+            return
+        if not is_root():
+            return
+
+        train_logging = self.cf.get("train_logging", {})
+        terminal_interval = train_logging.get("terminal", 1)
+        istep = self.cf.get("general", {}).get("istep", 0)
+        if terminal_interval <= 0 or istep % terminal_interval != 0:
+            return
+
+        with torch.no_grad():
+            tokens_float = tokens.detach().float()
+            token_mean = tokens_float.mean().item()
+            token_std = tokens_float.std().item()
+            token_norm_mean = tokens_float.norm(dim=-1).mean().item()
+
+        print(
+            f"{stream_name} tokens: "
+            f"mean={token_mean:.3e}, std={token_std:.3e}, "
+            f"norm_mean={token_norm_mean:.3e}"
+        )
 
     def get_pe_idxs_vectorized(self, batch):
         """

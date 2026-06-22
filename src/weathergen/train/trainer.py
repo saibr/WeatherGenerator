@@ -324,13 +324,44 @@ class Trainer(TrainerBase):
         beta2 = 1.0 - kappa * (1.0 - self.training_cfg.optimizer.adamw.beta2)
         eps = self.training_cfg.optimizer.adamw.get("eps", 2e-08) / np.sqrt(kappa)
 
+        #self.optimizer = torch.optim.AdamW(
+        #    self.model.parameters(),
+        #    lr=self.training_cfg.learning_rate_scheduling.lr_start,
+        #    weight_decay=self.training_cfg.optimizer.weight_decay,
+        #    betas=(beta1, beta2),
+        #    eps=eps,
+        #)
+
+        cerra_embed_params = list(self.model.encoder.embed_engine.embeds["CERRA"].parameters())
+        cerra_embed_ids = {id(p) for p in cerra_embed_params}
+        other_params = [p for p in self.model.parameters() if id(p) not in cerra_embed_ids]
+
+        if is_root():
+            print(f"CERRA embed param names: {[n for n, p in self.model.encoder.embed_engine.embeds['CERRA'].named_parameters()][:10]}")
+            print(f"CERRA embed total param count: {sum(p.numel() for p in self.model.encoder.embed_engine.embeds['CERRA'].parameters())}")
+            print(f"CERRA embed group size: {len(cerra_embed_params)}")
+
+        lr_start = self.training_cfg.learning_rate_scheduling.lr_start
+        cerra_lr_multiplier = 3.0
+
         self.optimizer = torch.optim.AdamW(
-            self.model.parameters(),
-            lr=self.training_cfg.learning_rate_scheduling.lr_start,
+            [
+                {"params": other_params},
+                {"params": cerra_embed_params, "lr": lr_start * cerra_lr_multiplier},
+            ],
+            lr=lr_start,
             weight_decay=self.training_cfg.optimizer.weight_decay,
             betas=(beta1, beta2),
             eps=eps,
         )
+
+        for i, g in enumerate(self.optimizer.param_groups):
+            print(f"param group {i}: lr={g['lr']}, num_params={len(g['params'])}")
+        
+        for g in self.optimizer.param_groups:
+            g["initial_lr"] = g["lr"]
+                
+
         self.grad_scaler = torch.amp.GradScaler("cuda")
 
         assert len(self.dataset) > 0, f"No data found in {self.dataset}"
@@ -495,6 +526,7 @@ class Trainer(TrainerBase):
 
             # gradient clipping
             self.grad_scaler.unscale_(self.optimizer)
+            self._print_selected_grad_norms(bidx)
             total_norm = torch.nn.utils.clip_grad_norm_(
                 self.model.parameters(), max_norm=self.training_cfg.optimizer.grad_clip
             )
@@ -767,6 +799,39 @@ class Trainer(TrainerBase):
         """
         return tensor.full_tensor().item() if isinstance(tensor, DTensor) else tensor.item()
 
+    def _print_selected_grad_norms(self, bidx: int) -> None:
+        if bidx % self.train_logging.terminal != 0:
+            return
+
+        grad_groups = {
+            "ERA5 embed": ("embed_engine.embeds.ERA5.",),
+            "CERRA embed": ("embed_engine.embeds.CERRA.",),
+            "ae_local": ("encoder.ae_local_engine.",),
+            "ae_adapter": ("encoder.ae_local_global_engine.",),
+            "ae_global": ("encoder.ae_global_engine.",),
+        }
+        grad_norms_sq = {group_name: 0.0 for group_name in grad_groups}
+        has_grad = dict.fromkeys(grad_groups, False)
+
+        for name, param in self.model.named_parameters():
+            if param.grad is None:
+                continue
+
+            for group_name, patterns in grad_groups.items():
+                if any(pattern in name for pattern in patterns):
+                    grad_norm = self._get_tensor_item(param.grad.norm())
+                    grad_norms_sq[group_name] += grad_norm * grad_norm
+                    has_grad[group_name] = True
+                    break
+
+        if not is_root():
+            return
+
+        for group_name in grad_groups:
+            grad_norm = sqrt(grad_norms_sq[group_name]) if has_grad[group_name] else 0.0
+            grad_text = f"{grad_norm:.0e}".replace("e-0", "e-").replace("e+0", "e+")
+            print(f"{group_name} grad = {grad_text}")
+
     def _log_instant_grad_norms(self, stage: Stage):
         """
         Log instantaneous grad norms, we do not average because of the cost and because we want to
@@ -784,7 +849,7 @@ class Trainer(TrainerBase):
 
     def _log_terminal(self, bidx: int, mini_epoch: int, stage: Stage):
         print_freq = self.train_logging.terminal
-        if bidx % print_freq == 0 or stage == VAL:
+        if bidx % print_freq == 0 and bidx > 0 or stage == VAL:
             # compute from last iteration
             loss_calculator = self.loss_calculator_val if stage == VAL else self.loss_calculator
             avg_loss, losses_all, _ = prepare_losses_for_logging(

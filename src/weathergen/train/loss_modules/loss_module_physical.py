@@ -345,6 +345,72 @@ class LossPhysical(LossModuleBase):
             )
         loss = loss / ctr_streams if ctr_streams > 0 else loss
 
+        # Additive CERRA gradient boost: re-add CERRA loss with extra weight
+        # so its gradient contribution is amplified independently of stream averaging
+        cerra_boost_term = None
+        if self.stage == TRAIN:
+            cerra_boost_weight = self.cf.get("cerra_loss_boost", 0.0)
+            if cerra_boost_weight > 0.0:
+                cerra_stream_info = self.cf.streams.get("CERRA")
+                if cerra_stream_info is not None:
+                    cerra_loss = torch.tensor(0.0, device=self.device, requires_grad=True)
+                    ctr_cerra = 0
+                    for timestep_idx, (preds_cur, target_cur) in enumerate(
+                        zip(preds.physical, targets.physical, strict=True)
+                    ):
+                        preds_batch = preds_cur.get("CERRA", [])
+                        if not preds_batch:
+                            continue
+                        targets_batch = target_cur["CERRA"]["target"]
+                        targets_times_batch = target_cur["CERRA"]["target_times"]
+                        targets_coords_batch = target_cur["CERRA"]["target_coords"]
+                        targets_is_spoof = target_cur["CERRA"]["is_spoof"]
+                        output_step_weight = (
+                            self._get_output_step_weights(len(targets.output_idxs))[timestep_idx]
+                            if timestep_idx < len(targets.output_idxs)
+                            else None
+                        )
+                        if output_step_weight is None:
+                            continue
+                        for pred, pred_params in zip(preds_batch, output_info, strict=True):
+                            target_idx_native = pred_params.global_params.get("correspondence", -1)
+                            target_idx = [
+                                i for i, t in enumerate(target_cur["CERRA"]["target_metda_data"])
+                                if t["CERRA"].global_params["idx"] == target_idx_native
+                            ]
+                            if len(target_idx) == 0:
+                                continue
+                            target_idx = target_idx[0]
+                            target = targets_batch[target_idx]
+                            if not (target.shape[0] > 0 and pred.shape[0] > 0):
+                                continue
+                            is_spoof = targets_is_spoof[target_idx]
+                            if is_spoof:
+                                continue
+                            target_times = targets_times_batch[target_idx]
+                            substep_masks = self._get_substep_masks(
+                                cerra_stream_info, timestep_idx, target_times
+                            )
+                            weights_locations = self._get_location_weights(
+                                cerra_stream_info, targets_coords_batch[target_idx], substep_masks
+                            )
+                            _, weights_channels = self._get_weights(cerra_stream_info)
+                            pred_r = pred.reshape([pred.shape[0], *target.shape])
+                            for loss_fct, _, loss_fct_name in self.loss_fcts:
+                                if loss_fct_name not in pred_params.global_params["loss"]:
+                                    continue
+                                loss_lfct, _ = self._loss_per_loss_function(
+                                    loss_fct, target, pred_r, substep_masks,
+                                    weights_channels, weights_locations,
+                                )
+                                cerra_loss = cerra_loss + loss_lfct * output_step_weight
+                                ctr_cerra += 1
+                    if ctr_cerra > 0:
+                        cerra_boost_term = cerra_boost_weight * (cerra_loss / ctr_cerra)
+                        loss = loss + cerra_boost_term
+                    else:
+                        cerra_boost_term = None
+
         def _nested_dict():
             return defaultdict(dict)
 
@@ -369,6 +435,8 @@ class LossPhysical(LossModuleBase):
                             reordered_losses[stream_name][loss_fct_name]["avg"] += v
                             count += 1
                 reordered_losses[stream_name][loss_fct_name]["avg"] /= count
+        if cerra_boost_term is not None:
+            reordered_losses["CERRA"]["boost"]["avg"] = cerra_boost_term.detach()
 
         # Return all computed loss components encapsulated in a ModelLoss dataclass
         return LossValues(loss=loss, losses_all=reordered_losses, stddev_all=None)

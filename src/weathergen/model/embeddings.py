@@ -134,6 +134,7 @@ class StreamEmbedTransformer(torch.nn.Module):
             raise ValueError(f"Unknown mode: {mode}")
 
         self.dropout_final = torch.nn.Dropout(0.1)
+        self.out_norm = torch.nn.LayerNorm(self.dim_out)
 
     def forward_channels(self, x_in):
         peh = positional_encoding_harmonic
@@ -159,7 +160,7 @@ class StreamEmbedTransformer(torch.nn.Module):
         if out.shape[-1] < self.dim_out:
             out = torch.nn.functional.pad(out, [0, self.dim_out - out.shape[-1]], value=0.0)
         # final reshape
-        out = self.dropout_final(out.reshape(-1, self.num_tokens, self.dim_out))
+        out = self.dropout_final(self.out_norm(out.reshape(-1, self.num_tokens, self.dim_out)).to(out.dtype))
 
         return out
 
