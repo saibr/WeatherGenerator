@@ -1,0 +1,15 @@
+# data_loading:
+#   num_workers: 2
+test_config:
+  start_date: 2020-01-01T12:00
+  end_date: 2020-01-31T23:59
+  output:
+    num_samples: 2
+  samples_per_mini_epoch: 2
+  time_window_step: 03:00:00
+  time_window_len: 03:00:00
+  forecast:
+    num_steps: 2
+    time_step: 06:00:00
+    #policy: "fixed"
+streams_directory: ./config/inference/streams/cerra_hpx6/

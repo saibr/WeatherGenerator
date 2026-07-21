@@ -100,6 +100,8 @@ For jupiter, if you have account or project permission errors when launching slu
         remove package version:
                 - "certifi"
 
+- On Santins changed slurm config for debugging!
+
 #############
 Cristian Lusanna Geoinfo
 #############
