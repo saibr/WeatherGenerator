@@ -102,6 +102,11 @@ For jupiter, if you have account or project permission errors when launching slu
 
 - On Santins changed slurm config for debugging!
 
+- On Jupiter we can change max number of chaine jobs:
+        launch-slurm.py --> CHAIN_JOBS_MAX_ALLOWED = 8 
+
+- On Jupiter specified project and account:
+        paths.yml --> slurm_account: "e-ext-2025e01-128"
 #############
 Cristian Lusanna Geoinfo
 #############
