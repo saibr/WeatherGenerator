@@ -183,3 +183,13 @@ https://confluence.ecmwf.int/display/CKB/CERRA-Land+surface+reanalysis%3A+Data+U
 ## Warning
 ERA5 tp GRIB code: 228
 CERRA tp GRIB code: 228228
+
+
+##############
+### Export Hourlt model
+##############
+
+Cristian Lusanna modifications adapted to netcdf parser
+https://github.com/metno/WeatherGenerator/commit/96aff25835d0e478a0150f4fc83069576e0bae04
+Modified: export_core.py, reshape.py, and netcdf_parser.py 
+ipoints are a flatten array containing valid_time * ncells points
