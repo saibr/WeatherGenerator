@@ -2,6 +2,9 @@
 ### Commands used ###
 #####################
 
+./scripts/actions.sh sync
+./scripts/actions.sh create-links
+
 ### Training ###
 
 ** Interactive Session (IS)**
@@ -44,7 +47,7 @@ uv run --offline inference --from-run-id <RUN_ID>\
 ** Training Plots **
 uv run --offline plot_train --from_yaml ./config/evaluate/train_plot_config.yml \
  --output_dir ./plots/MF_KNMI/ERA_CERRA_experiments
- --channels ch1 ch2 ... (default=["avg"]) 
+ --channels ch1 ch2 ... (default=[uv run --offline plot_train --from_yaml "avg"]) 
  --streams "ERA5" (default=["ERA5"])
  --forecast-steps 0 1 2 (default=[0, 1])
  --metrics mse (default=["mse"])
@@ -198,3 +201,11 @@ Cristian Lusanna modifications adapted to netcdf parser
 https://github.com/metno/WeatherGenerator/commit/96aff25835d0e478a0150f4fc83069576e0bae04
 Modified: export_core.py, reshape.py, and netcdf_parser.py 
 ipoints are a flatten array containing valid_time * ncells points
+
+########## NOTES
+**ABS coords
+torch.Size([375000, 114]) con geoinfo no hack
+torch.Size([375000, 110]) no geinfo si hack
+torch.Size([375000, 110]) no geinfo no hack
+
+**Hourly Model af90zz71
