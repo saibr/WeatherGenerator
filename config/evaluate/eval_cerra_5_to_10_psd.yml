@@ -1,0 +1,192 @@
+
+global_plotting_options:
+ regions: ["cerra"]
+ image_format : "png" 
+ dpi_val : 500
+ fps: 2
+
+evaluation:
+  metrics  :
+    - psd:
+        psd_method: "fft"    
+  regions: ["cerra"]
+  summary_plots : true
+  ratio_plots : true
+  heat_maps : false
+  summary_dir: "./plots/KNMI/eval_plots/psd_cerra_5_10"
+  plot_ensemble: false #supported: false, "std", "minmax", "members"
+  plot_score_maps: false #plot scores on a 2D maps. it slows down score computation 
+  print_summary: false #print out score values on screen. it can be verbose
+  log_scale: false
+  add_grid: false
+  score_cards: false
+  bar_plots: true
+  num_processes: "auto"  #options: int, "auto", 0 means no parallelism (default)
+  
+default_streams:
+  CERRA_OUT_1:
+    channels: [ 'skt', 'sp', '10si', '10wdir', '2r', '2t', 'msl', 'r_100', 'r_1000', 'r_150', 'r_200', 'r_250', 'r_300', 'r_400', 'r_50', 'r_500', 'r_600', 'r_700', 'r_850', 'r_925', 't_100', 't_1000', 't_150', 't_200', 't_250', 't_300', 't_400', 't_50', 't_500', 't_600', 't_700', 't_850', 't_925', 'u_100', 'u_1000', 'u_150', 'u_200', 'u_250', 'u_300', 'u_400', 'u_50', 'u_500', 'u_600', 'u_700', 'u_850', 'u_925', 'v_100', 'v_1000', 'v_150', 'v_200', 'v_250', 'v_300', 'v_400', 'v_50', 'v_500', 'v_600', 'v_700', 'v_850', 'v_925', 'z_100', 'z_1000', 'z_150', 'z_200', 'z_250', 'z_300', 'z_400', 'z_50', 'z_500', 'z_600', 'z_700', 'z_850', 'z_925']
+    evaluation:
+      forecast_step: "all"
+      sample: "all"
+      ensemble: "all"
+  CERRA_OUT_2:
+    channels: [ 'skt', 'sp', '10si', '10wdir', '2r', '2t', 'msl', 'r_100', 'r_1000', 'r_150', 'r_200', 'r_250', 'r_300', 'r_400', 'r_50', 'r_500', 'r_600', 'r_700', 'r_850', 'r_925', 't_100', 't_1000', 't_150', 't_200', 't_250', 't_300', 't_400', 't_50', 't_500', 't_600', 't_700', 't_850', 't_925', 'u_100', 'u_1000', 'u_150', 'u_200', 'u_250', 'u_300', 'u_400', 'u_50', 'u_500', 'u_600', 'u_700', 'u_850', 'u_925', 'v_100', 'v_1000', 'v_150', 'v_200', 'v_250', 'v_300', 'v_400', 'v_50', 'v_500', 'v_600', 'v_700', 'v_850', 'v_925', 'z_100', 'z_1000', 'z_150', 'z_200', 'z_250', 'z_300', 'z_400', 'z_50', 'z_500', 'z_600', 'z_700', 'z_850', 'z_925']
+    evaluation:
+      forecast_step: "all"
+      sample: "all"
+      ensemble: "all"
+  CERRA_OUT_3:
+    channels: [ 'skt', 'sp', '10si', '10wdir', '2r', '2t', 'msl', 'r_100', 'r_1000', 'r_150', 'r_200', 'r_250', 'r_300', 'r_400', 'r_50', 'r_500', 'r_600', 'r_700', 'r_850', 'r_925', 't_100', 't_1000', 't_150', 't_200', 't_250', 't_300', 't_400', 't_50', 't_500', 't_600', 't_700', 't_850', 't_925', 'u_100', 'u_1000', 'u_150', 'u_200', 'u_250', 'u_300', 'u_400', 'u_50', 'u_500', 'u_600', 'u_700', 'u_850', 'u_925', 'v_100', 'v_1000', 'v_150', 'v_200', 'v_250', 'v_300', 'v_400', 'v_50', 'v_500', 'v_600', 'v_700', 'v_850', 'v_925', 'z_100', 'z_1000', 'z_150', 'z_200', 'z_250', 'z_300', 'z_400', 'z_50', 'z_500', 'z_600', 'z_700', 'z_850', 'z_925']
+    evaluation:
+      forecast_step: "all"
+      sample: "all"
+      ensemble: "all"
+  CERRA_OUT_4:
+    channels: [ 'skt', 'sp', '10si', '10wdir', '2r', '2t', 'msl', 'r_100', 'r_1000', 'r_150', 'r_200', 'r_250', 'r_300', 'r_400', 'r_50', 'r_500', 'r_600', 'r_700', 'r_850', 'r_925', 't_100', 't_1000', 't_150', 't_200', 't_250', 't_300', 't_400', 't_50', 't_500', 't_600', 't_700', 't_850', 't_925', 'u_100', 'u_1000', 'u_150', 'u_200', 'u_250', 'u_300', 'u_400', 'u_50', 'u_500', 'u_600', 'u_700', 'u_850', 'u_925', 'v_100', 'v_1000', 'v_150', 'v_200', 'v_250', 'v_300', 'v_400', 'v_50', 'v_500', 'v_600', 'v_700', 'v_850', 'v_925', 'z_100', 'z_1000', 'z_150', 'z_200', 'z_250', 'z_300', 'z_400', 'z_50', 'z_500', 'z_600', 'z_700', 'z_850', 'z_925']
+    evaluation:
+      forecast_step: "all"
+      sample: "all"
+      ensemble: "all"
+  CERRA_OUT_5:
+    channels: [ 'skt', 'sp', '10si', '10wdir', '2r', '2t', 'msl', 'r_100', 'r_1000', 'r_150', 'r_200', 'r_250', 'r_300', 'r_400', 'r_50', 'r_500', 'r_600', 'r_700', 'r_850', 'r_925', 't_100', 't_1000', 't_150', 't_200', 't_250', 't_300', 't_400', 't_50', 't_500', 't_600', 't_700', 't_850', 't_925', 'u_100', 'u_1000', 'u_150', 'u_200', 'u_250', 'u_300', 'u_400', 'u_50', 'u_500', 'u_600', 'u_700', 'u_850', 'u_925', 'v_100', 'v_1000', 'v_150', 'v_200', 'v_250', 'v_300', 'v_400', 'v_50', 'v_500', 'v_600', 'v_700', 'v_850', 'v_925', 'z_100', 'z_1000', 'z_150', 'z_200', 'z_250', 'z_300', 'z_400', 'z_50', 'z_500', 'z_600', 'z_700', 'z_850', 'z_925']
+    evaluation:
+      forecast_step: "all"
+      sample: "all"
+      ensemble: "all"
+  CERRA_OUT_6:
+    channels: [ 'skt', 'sp', '10si', '10wdir', '2r', '2t', 'msl', 'r_100', 'r_1000', 'r_150', 'r_200', 'r_250', 'r_300', 'r_400', 'r_50', 'r_500', 'r_600', 'r_700', 'r_850', 'r_925', 't_100', 't_1000', 't_150', 't_200', 't_250', 't_300', 't_400', 't_50', 't_500', 't_600', 't_700', 't_850', 't_925', 'u_100', 'u_1000', 'u_150', 'u_200', 'u_250', 'u_300', 'u_400', 'u_50', 'u_500', 'u_600', 'u_700', 'u_850', 'u_925', 'v_100', 'v_1000', 'v_150', 'v_200', 'v_250', 'v_300', 'v_400', 'v_50', 'v_500', 'v_600', 'v_700', 'v_850', 'v_925', 'z_100', 'z_1000', 'z_150', 'z_200', 'z_250', 'z_300', 'z_400', 'z_50', 'z_500', 'z_600', 'z_700', 'z_850', 'z_925']
+    evaluation:
+      forecast_step: "all"
+      sample: "all"
+      ensemble: "all"
+  CERRA_OUT_7:
+    channels: [ 'skt', 'sp', '10si', '10wdir', '2r', '2t', 'msl', 'r_100', 'r_1000', 'r_150', 'r_200', 'r_250', 'r_300', 'r_400', 'r_50', 'r_500', 'r_600', 'r_700', 'r_850', 'r_925', 't_100', 't_1000', 't_150', 't_200', 't_250', 't_300', 't_400', 't_50', 't_500', 't_600', 't_700', 't_850', 't_925', 'u_100', 'u_1000', 'u_150', 'u_200', 'u_250', 'u_300', 'u_400', 'u_50', 'u_500', 'u_600', 'u_700', 'u_850', 'u_925', 'v_100', 'v_1000', 'v_150', 'v_200', 'v_250', 'v_300', 'v_400', 'v_50', 'v_500', 'v_600', 'v_700', 'v_850', 'v_925', 'z_100', 'z_1000', 'z_150', 'z_200', 'z_250', 'z_300', 'z_400', 'z_50', 'z_500', 'z_600', 'z_700', 'z_850', 'z_925']
+    evaluation:
+      forecast_step: "all"
+      sample: "all"
+      ensemble: "all"
+  CERRA_OUT_8:
+    channels: [ 'skt', 'sp', '10si', '10wdir', '2r', '2t', 'msl', 'r_100', 'r_1000', 'r_150', 'r_200', 'r_250', 'r_300', 'r_400', 'r_50', 'r_500', 'r_600', 'r_700', 'r_850', 'r_925', 't_100', 't_1000', 't_150', 't_200', 't_250', 't_300', 't_400', 't_50', 't_500', 't_600', 't_700', 't_850', 't_925', 'u_100', 'u_1000', 'u_150', 'u_200', 'u_250', 'u_300', 'u_400', 'u_50', 'u_500', 'u_600', 'u_700', 'u_850', 'u_925', 'v_100', 'v_1000', 'v_150', 'v_200', 'v_250', 'v_300', 'v_400', 'v_50', 'v_500', 'v_600', 'v_700', 'v_850', 'v_925', 'z_100', 'z_1000', 'z_150', 'z_200', 'z_250', 'z_300', 'z_400', 'z_50', 'z_500', 'z_600', 'z_700', 'z_850', 'z_925']
+    evaluation:
+      forecast_step: "all"
+      sample: "all"
+      ensemble: "all"
+  CERRA_OUT_9:
+    channels: [ 'skt', 'sp', '10si', '10wdir', '2r', '2t', 'msl', 'r_100', 'r_1000', 'r_150', 'r_200', 'r_250', 'r_300', 'r_400', 'r_50', 'r_500', 'r_600', 'r_700', 'r_850', 'r_925', 't_100', 't_1000', 't_150', 't_200', 't_250', 't_300', 't_400', 't_50', 't_500', 't_600', 't_700', 't_850', 't_925', 'u_100', 'u_1000', 'u_150', 'u_200', 'u_250', 'u_300', 'u_400', 'u_50', 'u_500', 'u_600', 'u_700', 'u_850', 'u_925', 'v_100', 'v_1000', 'v_150', 'v_200', 'v_250', 'v_300', 'v_400', 'v_50', 'v_500', 'v_600', 'v_700', 'v_850', 'v_925', 'z_100', 'z_1000', 'z_150', 'z_200', 'z_250', 'z_300', 'z_400', 'z_50', 'z_500', 'z_600', 'z_700', 'z_850', 'z_925']
+    evaluation:
+      forecast_step: "all"
+      sample: "all"
+      ensemble: "all"
+  CERRA_OUT_10:
+    channels: [ 'skt', 'sp', '10si', '10wdir', '2r', '2t', 'msl', 'r_100', 'r_1000', 'r_150', 'r_200', 'r_250', 'r_300', 'r_400', 'r_50', 'r_500', 'r_600', 'r_700', 'r_850', 'r_925', 't_100', 't_1000', 't_150', 't_200', 't_250', 't_300', 't_400', 't_50', 't_500', 't_600', 't_700', 't_850', 't_925', 'u_100', 'u_1000', 'u_150', 'u_200', 'u_250', 'u_300', 'u_400', 'u_50', 'u_500', 'u_600', 'u_700', 'u_850', 'u_925', 'v_100', 'v_1000', 'v_150', 'v_200', 'v_250', 'v_300', 'v_400', 'v_50', 'v_500', 'v_600', 'v_700', 'v_850', 'v_925', 'z_100', 'z_1000', 'z_150', 'z_200', 'z_250', 'z_300', 'z_400', 'z_50', 'z_500', 'z_600', 'z_700', 'z_850', 'z_925']
+    evaluation:
+      forecast_step: "all"
+      sample: "all"
+      ensemble: "all"
+  CERRA_OUT_11:
+    channels: [ 'skt', 'sp', '10si', '10wdir', '2r', '2t', 'msl', 'r_100', 'r_1000', 'r_150', 'r_200', 'r_250', 'r_300', 'r_400', 'r_50', 'r_500', 'r_600', 'r_700', 'r_850', 'r_925', 't_100', 't_1000', 't_150', 't_200', 't_250', 't_300', 't_400', 't_50', 't_500', 't_600', 't_700', 't_850', 't_925', 'u_100', 'u_1000', 'u_150', 'u_200', 'u_250', 'u_300', 'u_400', 'u_50', 'u_500', 'u_600', 'u_700', 'u_850', 'u_925', 'v_100', 'v_1000', 'v_150', 'v_200', 'v_250', 'v_300', 'v_400', 'v_50', 'v_500', 'v_600', 'v_700', 'v_850', 'v_925', 'z_100', 'z_1000', 'z_150', 'z_200', 'z_250', 'z_300', 'z_400', 'z_50', 'z_500', 'z_600', 'z_700', 'z_850', 'z_925']
+    evaluation:
+      forecast_step: "all"
+      sample: "all"
+      ensemble: "all"
+  CERRA_OUT_12:
+    channels: [ 'skt', 'sp', '10si', '10wdir', '2r', '2t', 'msl', 'r_100', 'r_1000', 'r_150', 'r_200', 'r_250', 'r_300', 'r_400', 'r_50', 'r_500', 'r_600', 'r_700', 'r_850', 'r_925', 't_100', 't_1000', 't_150', 't_200', 't_250', 't_300', 't_400', 't_50', 't_500', 't_600', 't_700', 't_850', 't_925', 'u_100', 'u_1000', 'u_150', 'u_200', 'u_250', 'u_300', 'u_400', 'u_50', 'u_500', 'u_600', 'u_700', 'u_850', 'u_925', 'v_100', 'v_1000', 'v_150', 'v_200', 'v_250', 'v_300', 'v_400', 'v_50', 'v_500', 'v_600', 'v_700', 'v_850', 'v_925', 'z_100', 'z_1000', 'z_150', 'z_200', 'z_250', 'z_300', 'z_400', 'z_50', 'z_500', 'z_600', 'z_700', 'z_850', 'z_925']
+    evaluation:
+      forecast_step: "all"
+      sample: "all"
+      ensemble: "all"
+  CERRA_OUT_13:
+    channels: [ 'skt', 'sp', '10si', '10wdir', '2r', '2t', 'msl', 'r_100', 'r_1000', 'r_150', 'r_200', 'r_250', 'r_300', 'r_400', 'r_50', 'r_500', 'r_600', 'r_700', 'r_850', 'r_925', 't_100', 't_1000', 't_150', 't_200', 't_250', 't_300', 't_400', 't_50', 't_500', 't_600', 't_700', 't_850', 't_925', 'u_100', 'u_1000', 'u_150', 'u_200', 'u_250', 'u_300', 'u_400', 'u_50', 'u_500', 'u_600', 'u_700', 'u_850', 'u_925', 'v_100', 'v_1000', 'v_150', 'v_200', 'v_250', 'v_300', 'v_400', 'v_50', 'v_500', 'v_600', 'v_700', 'v_850', 'v_925', 'z_100', 'z_1000', 'z_150', 'z_200', 'z_250', 'z_300', 'z_400', 'z_50', 'z_500', 'z_600', 'z_700', 'z_850', 'z_925']
+    evaluation:
+      forecast_step: "all"
+      sample: "all"
+      ensemble: "all"
+  
+
+      
+run_ids:
+      qs5lo1ud:
+          label: "5: input: 72 vars, 1 decoder for r_850"
+          color: "#0072B2"
+          rank: "all"
+      nobjggqt:
+          label: "6_1: input: 72 vars, 1 decoder for r_700, r_850, r_925"
+          color: "#E69F00"
+          rank: "all"
+      lzeitk6a:
+          label: "6_2: input: 72 vars, 3 decoders for r_700, r_850, r_925"
+          color: "#009E73"
+          rank: "all"
+      mmj9ir39:
+          label: "7_1: input: 72 vars, 1 decoder for all 13 r_*"
+          color: "#D55E00"
+          rank: "all"
+      bgh642aj:
+          label: "7_2: input: 72 vars, 13 decoders for r_*"
+          color: "#CC79A7"
+          rank: "all"
+      a3es2es3:
+          label: "7_3: input: 72 vars, 4 decoder for r_*"
+          color: "#56B4E9"
+          rank: "all"
+      d7s86w4z:
+          label: "8_1: input: 72 vars, 1 decoder for 12 vars 2r,10si,r_100,r_850,t_100,t_850,u_100,u_850,v_100,v_850,z_100,z_850"
+          color: "#F0E442"
+          rank: "all"
+      jnzp5b8g:
+          label: "8_2: input: 72 vars, 12 decoders"
+          color: "#6A3D9A"
+          rank: "all"
+      bs15zb8l:
+          label: "8_3: input: 72 vars, 7 decoders, 5 vars + 2"
+          color: "#E7298A"
+          rank: "all"
+      hk5q6hl6:
+          label: "8_4: input: 72 vars, 4 decoders - *_100 + *_850 + 2r + 10si"
+          color: "#1B9E77"
+          rank: "all"
+      hftkl3x3:
+          label: "8_5: input: 72 vars, 3 decoders, 4 random sets"
+          color: "#386CB0"
+          rank: "all"
+      n5tk14b6:
+          label: "8_6: input: 12 vars, 12 decoders"
+          color: "#FDBF11"
+          rank: "all"
+      neesfp03:
+          label: "9_1: input: 10si, r_850, 1 decoder for 10si, r_850, target_readout.num_layers=2"
+          color: "#E31A1C"
+          rank: "all"
+      wpwezpp3:
+          label: "9_2: input: 10si, r_850, 1 decoder for 10si, r_850, target_readout.num_layers=4"
+          color: "#66A61E"
+          rank: "all"
+      lwyq50he:
+          label: "9_3: input: 10si, r_850, 2 decoders for 10si, r_850, target_readout.num_layers=2"
+          color: "#A6761D"
+          rank: "all"
+      lp2c2rm9:
+          label: "9_4: input: 10si, r_850, 2 decoders for 10si, r_850, target_readout.num_layers=1"
+          color: "#008C95"
+          rank: "all"
+      a5zu40kl:
+          label: "10_1: 72 input variables, 1 decoder for 10si, r_850, target_readout.num_layers=2"
+          color: "#984EA3"
+          rank: "all"
+      z0oj3fmn:
+          label: "10_2: 72 input variables, 1 decoder for 10si, r_850, target_readout.num_layers=4"
+          color: "#FF7F00"
+          rank: "all"
+      fh3k5hwq:
+          label: "10_3: 72 input variables, 2 decoders for 10si, r_850, target_readout.num_layers=2"
+          color: "#17BECF"
+          rank: "all"
+      tdcp1k8y:
+          label: "10_4: 72 input variables, 2 decoders for 10si, r_850, target_readout.num_layers=1"
+          color: "#B3B300"
+          rank: "all"
+      fsp6cmp0:
+          label: "11: 72 input variables, 2 decoders for 10si, r_850, target_readout.num_layers=1"
+          color: "#C51B8A"
+          rank: "all"

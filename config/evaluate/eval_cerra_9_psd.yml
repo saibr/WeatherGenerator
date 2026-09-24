@@ -1,0 +1,61 @@
+
+global_plotting_options:
+ regions: ["cerra"]
+ image_format : "png" 
+ dpi_val : 500
+ fps: 2
+
+evaluation:
+  metrics  :
+    - psd:
+        psd_method: "fft"    
+  regions: ["cerra"]
+  summary_plots : true
+  ratio_plots : true
+  heat_maps : false
+  summary_dir: "./plots/KNMI/eval_plots/psd_cerra_9"
+  plot_ensemble: false #supported: false, "std", "minmax", "members"
+  plot_score_maps: false #plot scores on a 2D maps. it slows down score computation 
+  print_summary: false #print out score values on screen. it can be verbose
+  log_scale: false
+  add_grid: false
+  score_cards: false
+  bar_plots: true
+  num_processes: "auto"  #options: int, "auto", 0 means no parallelism (default)
+  
+default_streams:
+  CERRA_OUT_1:
+    channels: ['10si', 'r_850']
+    evaluation:
+      forecast_step: "all"
+      sample: "all"
+      ensemble: "all"
+  CERRA_OUT_2:
+    channels: [ '10si', 'r_850']
+    evaluation:
+      forecast_step: "all"
+      sample: "all"
+      ensemble: "all"
+
+      
+run_ids :
+      qs5lo1ud:
+          label: "5: input: 72 vars, 1 decoder for r_850"
+          color: "#0072B2"
+          rank: "all"
+      neesfp03:
+          label: "9_1: input: 10si, r_850, 1 decoder for 10si, r_850, target_readout.num_layers=2"
+          color: "#E31A1C"
+          rank: "all"
+      wpwezpp3:
+          label: "9_2: input: 10si, r_850, 1 decoder for 10si, r_850, target_readout.num_layers=4"
+          color: "#66A61E"
+          rank: "all"
+      lwyq50he:
+          label: "9_3: input: 10si, r_850, 2 decoders for 10si, r_850, target_readout.num_layers=2"
+          color: "#A6761D"
+          rank: "all"
+      lp2c2rm9:
+          label: "9_4: input: 10si, r_850, 2 decoders for 10si, r_850, target_readout.num_layers=1"
+          color: "#008C95"
+          rank: "all"

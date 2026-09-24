@@ -818,16 +818,18 @@ def psd_plot_metric_region(
     scores_dict: dict,
     plotter: object,
 ) -> None:
-    """Create PSD plots for all streams and channels for a given metric and region.
+    """Create one PSD plot per channel and forecast step for a metric/region.
 
     PSD curves (frequencies, target PSD, prediction PSD) are stored in
-    ``score.attrs`` by ``Scores.calc_psd`` and read back here.
+    ``score.attrs`` by ``Scores.calc_psd`` and read back here. Curves from
+    every output stream are overlaid in the same plot.
     """
     streams_set = collect_streams(runs)
     channels_set = collect_channels(scores_dict, metric, region, runs)
 
-    for stream in streams_set:
-        for ch in channels_set:
+    for ch in channels_set:
+        per_fstep: dict[int, tuple[list[dict], list[str], list[str | None]]] = {}
+        for stream in streams_set:
             for run_id, data in scores_dict[metric][region].get(stream, {}).items():
                 if ch not in np.atleast_1d(data.channel.values):
                     continue
@@ -841,26 +843,34 @@ def psd_plot_metric_region(
                     _logger.warning(f"PSD attrs missing for {run_id}/{stream}/{ch}. Skipping.")
                     continue
 
-                label = runs[run_id].get("label", run_id)
+                run_label = runs[run_id].get("label", run_id)
+                label = f"{run_label} ({stream})"
+                color = runs[run_id].get("color")
 
                 for fstep in attr_fsteps:
                     psd_datasets = _extract_psd_attrs(data_ch, fstep, ch)
                     if psd_datasets is None:
                         continue
+                    datasets, labels, colors = per_fstep.setdefault(fstep, ([], [], []))
+                    datasets.extend(psd_datasets)
+                    labels.extend([label] * len(psd_datasets))
+                    colors.extend([color] * len(psd_datasets))
 
-                    method_tag = psd_datasets[0].get("psd_method", "sht")
-                    name = create_filename(
-                        prefix=[metric, method_tag, region],
-                        middle=[run_id],
-                        suffix=[stream, ch, f"fstep{fstep}"],
-                    )
-                    plotter.psd_plot(
-                        psd_datasets,
-                        [label],
-                        tag=name,
-                        variable=ch,
-                        forecast_step=str(fstep),
-                    )
+        for fstep, (datasets, labels, colors) in sorted(per_fstep.items()):
+            method_tag = datasets[0].get("psd_method", "sht")
+            name = create_filename(
+                prefix=[metric, method_tag, region],
+                middle=["allstreams"],
+                suffix=[ch, f"fstep{fstep}"],
+            )
+            plotter.psd_plot(
+                datasets,
+                labels,
+                colors=colors,
+                tag=name,
+                variable=ch,
+                forecast_step=str(fstep),
+            )
     _logger.info(f"PSD plots saved successfully into: {plotter.out_plot_dir_psd}")
 
 

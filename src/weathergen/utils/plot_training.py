@@ -30,6 +30,23 @@ MAX_FILENAME_LEN = 255
 PLOT_DPI_VALUE = 150
 
 
+def _group_stream_names(stream_names: list[str]) -> list[str]:
+    """Combine CERRA-family streams into one plot group."""
+    grouped_streams = []
+    for stream_name in stream_names:
+        group_name = "CERRA" if stream_name.upper().startswith("CERRA") else stream_name
+        if group_name not in grouped_streams:
+            grouped_streams.append(group_name)
+    return grouped_streams
+
+
+def _matches_stream_group(stream_group: str, column_stream: str) -> bool:
+    """Return whether a logged stream belongs to a requested plot group."""
+    if stream_group.upper() == "CERRA":
+        return column_stream.upper().startswith("CERRA")
+    return column_stream.lower() == stream_group.lower()
+
+
 def _add_legend(
     labels,
     outside: bool,
@@ -389,7 +406,8 @@ def plot_loss_per_stream(
     legend_max_label_len: int = 80,
 ):
     """
-    Plot each stream in stream_names (using matching to data columns) for all run_ids
+    Plot each stream group in stream_names (using matching to data columns) for all run_ids.
+    All stream names starting with ``CERRA`` are combined in the ``CERRA`` group.
 
     Parameters
     ----------
@@ -449,12 +467,12 @@ def plot_loss_per_stream(
                         for col in run_data_mode.columns:
                             col_split = col.split(".")
                             if len(col_split) < 4:
-                                if stream_name in col:
+                                if _matches_stream_group(stream_name, col):
                                     data_cols += [col]
                                     title_col = col if title_col is None else title_col
                             elif len(col_split) == 4:
                                 if (
-                                    col_split[1].lower() == stream_name.lower()
+                                    _matches_stream_group(stream_name, col_split[1])
                                     and col_split[2].lower() == err.lower()
                                     and col_split[3] == channel
                                 ):
@@ -462,7 +480,7 @@ def plot_loss_per_stream(
                                     title_col = col if title_col is None else title_col
                             elif len(col_split) == 5:
                                 if (
-                                    col_split[1].lower() == stream_name.lower()
+                                    _matches_stream_group(stream_name, col_split[1])
                                     and col_split[2].lower() == err.lower()
                                     and col_split[3] == channel
                                     and int(col_split[4]) in forecast_steps
@@ -861,7 +879,7 @@ def plot_train(args=None):
 
     model_base_dir = Path(args.model_base_dir) if args.model_base_dir else None
     out_dir = Path(args.output_dir)
-    streams = list(args.streams)
+    streams = _group_stream_names(list(args.streams))
     x_types_valid = ["step"]  # TODO: add "reltime" support when fix available
     if args.x_type not in x_types_valid:
         raise ValueError(f"x_type must be one of {x_types_valid}, but got {args.x_type}")

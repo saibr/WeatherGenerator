@@ -53,6 +53,9 @@ from weathergen.utils.train_logger import TrainLogger, prepare_losses_for_loggin
 from weathergen.utils.utils import get_dtype
 from weathergen.utils.validation_io import write_output
 
+from weathergen.model.norms import AdaLayerNorm
+from torch.distributed.tensor import DTensor
+
 logger = logging.getLogger(__name__)
 
 # cfg_keys_to_filter = ["losses", "model_input", "target_input"]
@@ -283,6 +286,21 @@ class Trainer(TrainerBase):
             cf.with_ddp,
             cf.with_fsdp,
         )
+
+        # sanity check: confirm AdaLayerNorm's zero-init survived model construction + FSDP wrapping
+        # only meaningful for a fresh run — resumed runs load trained (non-zero) weights by design
+        if run_id_contd is None:
+            for name, m in self.model.named_modules():
+                if isinstance(m, AdaLayerNorm):
+                    w, b = m.embed_aux[-1].weight, m.embed_aux[-1].bias
+                    w = w.full_tensor() if isinstance(w, DTensor) else w
+                    b = b.full_tensor() if isinstance(b, DTensor) else b
+                    assert torch.all(w == 0) and torch.all(b == 0), (
+                        f"{name}.embed_aux[-1] was not zero at training start — re-init suspected."
+                    )
+            if is_root():
+                logger.info("AdaLayerNorm zero-init check passed.")
+
 
         validate_with_ema_cfg = self.validation_cfg.get("validate_with_ema")
         if validate_with_ema_cfg is not None:

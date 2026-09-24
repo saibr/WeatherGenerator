@@ -738,6 +738,7 @@ class LinePlots:
         self,
         psd_datasets: list[dict],
         labels: list[str],
+        colors: list[str | None] | None = None,
         tag: str = "",
         variable: str = "",
         forecast_step: str = "",
@@ -754,6 +755,10 @@ class LinePlots:
             ``Scores.calc_psd`` in ``.attrs``.
         labels : list[str]
             Human-readable label for each run.
+        colors : list[str | None], optional
+            Matplotlib colors corresponding to ``psd_datasets``. When a
+            color is ``None`` (or no list is provided), fall back to the
+            default PSD color cycle.
         tag : str
             Filename tag.
         """
@@ -773,9 +778,14 @@ class LinePlots:
 
         # Upper panel: log-log spectra
         ax_spec.loglog(freq, tar_psd, color="black", lw=1.5, label="Target")
-        colors = plt.cm.tab10.colors
+        default_colors = plt.cm.tab10.colors
         for i, (ds, label) in enumerate(zip(psd_datasets, labels, strict=False)):
-            c = colors[i % len(colors)]
+            configured_color = colors[i] if colors is not None else None
+            c = (
+                configured_color
+                if configured_color is not None
+                else default_colors[i % len(default_colors)]
+            )
             ax_spec.loglog(
                 np.asarray(ds["frequencies"]),
                 np.asarray(ds["psd_prediction"]),
@@ -796,7 +806,12 @@ class LinePlots:
 
         # Lower panel: ratio (pred / target)
         for i, (ds, label) in enumerate(zip(psd_datasets, labels, strict=False)):
-            c = colors[i % len(colors)]
+            configured_color = colors[i] if colors is not None else None
+            c = (
+                configured_color
+                if configured_color is not None
+                else default_colors[i % len(default_colors)]
+            )
             pred = np.asarray(ds["psd_prediction"])
             with np.errstate(divide="ignore", invalid="ignore"):
                 ratio = np.where(tar_psd > 0, pred / tar_psd, np.nan)

@@ -1,0 +1,61 @@
+
+global_plotting_options:
+ regions: ["cerra"]
+ image_format : "png" 
+ dpi_val : 500
+ fps: 2
+
+evaluation:
+  metrics  : ["rmse"] 
+  regions: ["cerra"]
+  summary_plots : false
+  ratio_plots : false
+  heat_maps : false
+  summary_dir: "./plots/KNMI/eval_plots/cerra_5_11"
+  plot_ensemble: false #supported: false, "std", "minmax", "members"
+  plot_score_maps: false #plot scores on a 2D maps. it slows down score computation 
+  print_summary: false #print out score values on screen. it can be verbose
+  log_scale: false
+  add_grid: false
+  score_cards: false
+  bar_plots: false
+  num_processes: "auto"  #options: int, "auto", 0 means no parallelism (default)
+  
+default_streams:
+  CERRA:
+    channels: ['r_850']
+    evaluation:
+      forecast_step: "all"
+      sample: "all"
+      ensemble: "all"
+    plotting:
+      sample: [1]
+      forecast_step: "all"
+      ensemble: "mean"
+      plot_maps: true
+      plot_bias: true
+      plot_target: true
+      plot_histograms: true
+      plot_animations: false
+
+  
+run_ids :
+      # clxo7hzb:
+      #     label: "12: input: 72 vars, 1 decoder for 10si, r_850 - adalayernorm - large decoder"
+      #     color: "#0072B2"
+      #     rank: "all"
+      # s7we588w:
+      #     label: "12: input: 72 vars, 1 decoder for 10si, r_850 - no change in adalayernorm - large decoder"
+      #     color: "#0072B2"
+      #     rank: "all"
+      # fsp6cmp0:
+      #     label: "11: input: 72 vars, 1 decoder for r_850 - adalayernorm fix"
+      #     color: "#C51B8A"
+      #     rank: "all"
+      g60czth7:
+          label: "5 - evaluated at epoch 49"
+          color: "#0072B2"
+          rank: "all"
+
+      
+      

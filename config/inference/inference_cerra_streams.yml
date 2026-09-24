@@ -1,0 +1,7 @@
+test_config:
+  start_date: 2023-10-01T00:00
+  output:
+    num_samples: 20
+  samples_per_mini_epoch: 20
+  forecast:
+    num_steps: 1
