@@ -852,16 +852,21 @@ class Model(torch.nn.Module):
         # Allow for pushforward trick
         p_fwd = self.cf.training_config.get("forecast", {}).get("pushforward", False)
 
+        # Autoencoding with a model that has a forecast engine: decode the encoder latent directly.
+        # The (frozen) forecast engine stays in the model, so its weights are carried unchanged
+        # into the checkpoints and a later forecasting fine-tune can continue from them.
+        bypass_fe = self.cf.get("bypass_forecast_engine", False)
+
         # roll-out in latent space, iterate and generate output over requested output steps
         for step in forecast_steps:
-            without_grad = p_fwd and self.training and step != final_step
+            without_grad = p_fwd and self.training and step != final_step and not bypass_fe
             if without_grad:
                 # Pushforward mode: advance tokens without grad; no decoding
                 with torch.no_grad():
                     tokens = self.forecast_engine(tokens, step, model_params.rope_coords)
                 continue
 
-            if self.forecast_engine:
+            if self.forecast_engine and not bypass_fe:
                 # apply forecasting engine
                 tokens = self.forecast_engine(
                     tokens,

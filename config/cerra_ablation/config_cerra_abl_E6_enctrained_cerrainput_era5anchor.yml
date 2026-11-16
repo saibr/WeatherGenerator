@@ -1,0 +1,70 @@
+# CERRA fine-tuning ablation, E6: encoder trained | CERRA input+target | ERA5 decoder frozen, loss on
+#
+# Overlay on sdnbfpve (train_continue). Everything not set here (architecture, other
+# streams, 8 x 6h forecast MSE loss, train 2016-2022 / val 2023-10..12) is inherited.
+# E0-E7 differ ONLY in: freeze_modules, CERRA `diagnostic`, ERA5 `loss_weight`.
+# E8 (vs E0) additionally tests 3-hourly CERRA inside the 6h windows.
+# The forecast engine is frozen in all of them.
+#
+# Launch:
+#   ../WeatherGenerator-private/hpc/launch-slurm.py --stage train --from-run-id sdnbfpve \
+#       --nodes 1 --no-register --config config/cerra_ablation/config_cerra_abl_E6_enctrained_cerrainput_era5anchor.yml --options data_loading.rng_seed=42
+
+freeze_modules: 'forecast_engine|embed_target_coords_ERA5|TargetPredictionEngine_ERA5|EnsPredictionHead_ERA5'
+
+general:
+  istep: 0  # restart step counter / LR schedule (sdnbfpve stopped at 1168)
+  desc: "cerra_ablation E6: encoder trained | CERRA input+target | ERA5 decoder frozen, loss on"
+
+training_config:
+  num_mini_epochs: 4
+  samples_per_mini_epoch: 4096
+  learning_rate_scheduling:
+    # same LR for all runs so the comparison is fair; 1e-4 is too high for the 610M encoder
+    lr_max: 3.0e-5
+    num_steps_warmup: 64
+    num_steps_cooldown: 128
+    # sdnbfpve used the old spelling "const", which the scheduler no longer accepts
+    parallel_scaling_policy: "constant"
+
+validation_config:
+  validate_before_training: false
+
+wgtags:
+  exp: cerra_ft_ablation
+  grid: E6
+
+streams:
+  CERRA:
+    name: CERRA
+    type: anemoi
+    filenames: ['cerra-rr-an-oper-se-al-ec-mars-5p5km-1985-2023-3h-v2.zarr']
+    stream_id: 42  # unused by sdnbfpve
+    diagnostic: false  # CERRA is encoder input AND target
+    # 6h windows / 6h forecast steps (like ERA5_in): one CERRA analysis per window
+    frequency: "06:00:00"
+    source: ['skt', 'sp', '10si', '10wdir', '2r', '2t', 'msl', 'r_100', 'r_1000', 'r_150', 'r_200', 'r_250', 'r_300', 'r_400', 'r_50', 'r_500', 'r_600', 'r_700', 'r_850', 'r_925', 't_100', 't_1000', 't_150', 't_200', 't_250', 't_300', 't_400', 't_50', 't_500', 't_600', 't_700', 't_850', 't_925', 'u_100', 'u_1000', 'u_150', 'u_200', 'u_250', 'u_300', 'u_400', 'u_50', 'u_500', 'u_600', 'u_700', 'u_850', 'u_925', 'v_100', 'v_1000', 'v_150', 'v_200', 'v_250', 'v_300', 'v_400', 'v_50', 'v_500', 'v_600', 'v_700', 'v_850', 'v_925', 'z_100', 'z_1000', 'z_150', 'z_200', 'z_250', 'z_300', 'z_400', 'z_50', 'z_500', 'z_600', 'z_700', 'z_850', 'z_925']
+    target: ['2t', '10si', 'msl', 'r_850', 't_850', 'u_850', 'v_850', 'z_850']
+    geoinfo_channels: ['insolation', 'cos_local_time', 'sin_local_time', 'cos_julian_day', 'sin_julian_day']
+    loss_weight: 1.0
+    # Measured max source tokens per healpix-5 cell (limit ae_local_max_tokens_per_cell = 64):
+    #   token_size 512: CERRA 4 (6h) / 7 (3h), all streams together 12 / 15
+    #   token_size 32:  CERRA 55, all streams 61 -> just under the limit at 6h, over it at 3h.
+    # Kept identical in all runs.
+    token_size: 512
+    max_num_targets: 570000
+    embed:  # only built/used when diagnostic: false (E4-E7)
+      net: transformer
+      num_tokens: 1
+      num_heads: 8
+      dim_embed: 512
+      num_blocks: 2
+    embed_target_coords:
+      net: linear
+      dim_embed: 512
+    target_readout:
+      num_layers: 2
+      num_heads: 4
+    pred_head:
+      ens_size: 1
+      num_layers: 1

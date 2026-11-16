@@ -1,0 +1,91 @@
+# Overlay config: train a NEW decoder for NOAA GHCNh station observations on top of
+# the frozen sdnbfpve encoder + forecast engine. Everything not set here
+# (architecture, other streams, forecast MSE loss over 8 x 6h steps, dates) is
+# inherited from sdnbfpve.
+#
+# Launch (from the WeatherGenerator root; --stage train + --from-run-id = train_continue):
+#   ../WeatherGenerator-private/hpc/launch-slurm.py --stage train \
+#       --from-run-id sdnbfpve --config config/config_finetune_decoder_sdnbfpve_ghcnh.yml
+#
+# GHCNH is a diagnostic (target-only) stream: it is never fed to the encoder
+# (Identity embedder, no new encoder weights). Its decoder (embed_target_coords /
+# target_token_engines / pred_heads for GHCNH) does not exist in the sdnbfpve
+# checkpoint, so it starts from random init (logged as "Missing keys" on load).
+# The existing ERA5 decoder is frozen too, so ONLY the GHCNH decoder trains.
+
+freeze_modules: "encoder|forecast_engine|embed_target_coords_ERA5|TargetPredictionEngine_ERA5|EnsPredictionHead_ERA5"
+
+# sdnbfpve stopped at istep=1168. Restart the step counter so the LR schedule
+# and mini-epoch count start from zero for this stage.
+general:
+  istep: 0
+
+training_config:
+  num_mini_epochs: 16
+  learning_rate_scheduling:
+    lr_max: 1.0e-4
+    num_steps_warmup: 64
+    num_steps_cooldown: 128
+    # sdnbfpve was trained with the old spelling "const", which the scheduler no longer accepts
+    parallel_scaling_policy: "constant"
+
+streams:
+  # GHCNH:
+  #   name: GHCNH  # normally set by load_streams; required when a stream is defined inline
+  #   type: obs
+  #   stream_id: 40  # unused by sdnbfpve (0, 1, 10-14, 21, 22, 30 are taken)
+  #   filenames: ["observations-noaa-ghcnh-1979-2025-qc-v2.zarr"]
+  #   diagnostic: true  # target only, not model input
+  #   coords_channels: ["latitude", "longitude"]  # this zarr uses latitude/longitude, not lat/lon
+  #   source: &ghcnh_channels
+  #     - obsvalue_temperature
+  #     - obsvalue_dew_point_temperature
+  #     - obsvalue_station_level_pressure
+  #     - obsvalue_u
+  #     - obsvalue_v
+  #   target: *ghcnh_channels
+  #   # "elevation" is left out: it contains -999.9 / 9999 sentinel values in this zarr.
+  #   geoinfo_channels: ["cos_sza", "cos_local_time", "sin_local_time", "cos_julian_day", "sin_julian_day"]
+  #   loss_weight: 1.0
+  #   token_size: 256
+  #   tokenize_spacetime: false
+  #   max_num_targets: -1
+  #   # decoder sized like sdnbfpve's SurfaceCombined stream (also surface station obs)
+  #   embed: {net: transformer, num_tokens: 1, num_heads: 2, dim_embed: 512, num_blocks: 2}  # unused (diagnostic)
+  #   embed_target_coords: {net: linear, dim_embed: 512}
+  #   target_readout: {num_layers: 1, num_heads: 4, self_attention: false, mlp_hidden_factor: 1}
+  #   pred_head: {ens_size: 1, num_layers: 1}
+  CERRA :
+    name : CERRA
+    type : anemoi
+    filenames: ['cerra-rr-an-oper-se-al-ec-mars-5p5km-1985-2023-3h-v2.zarr']
+    stream_id : 42
+    diagnostic: True # vary
+    frequency : 03:00:00
+    source : [ 'skt', 'sp', '10si', '10wdir', '2r', '2t', 'msl', 'r_100', 'r_1000', 'r_150', 'r_200', 'r_250', 'r_300', 'r_400', 'r_50', 'r_500', 'r_600', 'r_700', 'r_850', 'r_925', 't_100', 't_1000', 't_150', 't_200', 't_250', 't_300', 't_400', 't_50', 't_500', 't_600', 't_700', 't_850', 't_925', 'u_100', 'u_1000', 'u_150', 'u_200', 'u_250', 'u_300', 'u_400', 'u_50', 'u_500', 'u_600', 'u_700', 'u_850', 'u_925', 'v_100', 'v_1000', 'v_150', 'v_200', 'v_250', 'v_300', 'v_400', 'v_50', 'v_500', 'v_600', 'v_700', 'v_850', 'v_925', 'z_100', 'z_1000', 'z_150', 'z_200', 'z_250', 'z_300', 'z_400', 'z_50', 'z_500', 'z_600', 'z_700', 'z_850', 'z_925']
+    target : [ '2t', '10si', 'msl', 'r_850', 't_850', 'u_850', 'v_850', 'z_850']
+    geoinfo_channels : [ 'insolation',
+                        'cos_local_time', 'sin_local_time', 'cos_julian_day', 'sin_julian_day',
+                        #  'cos_latitude', 'cos_longitude',
+                        #  'sin_latitude', 'sin_longitude',
+                        ]
+    loss_weight : 1.
+    token_size : 32
+    max_num_targets: 570000 #131072 #131072 # 262144   #131072 # 65536 #32768 #8192
+    embed : 
+      net : transformer
+      num_tokens : 1
+      num_heads : 8
+      dim_embed : 512
+      num_blocks : 2
+    # pred_spatial_shared: ERA5
+    embed_target_coords :
+      net : linear
+      dim_embed : 512
+    target_readout :
+      type : 'obs_value'
+      num_layers : 2
+      num_heads : 4
+    pred_head :
+      ens_size : 1
+      num_layers : 1
